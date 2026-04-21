@@ -14,10 +14,12 @@ team/projectpulse/ram/dto/StudentResponse.class
 team/projectpulse/ram/model/SectionWeek.class
 team/projectpulse/ram/dto/CriterionRequest.class
 team/projectpulse/ram/service/TeamService.class
+team/projectpulse/ram/controller/TeamController.class
 team/projectpulse/ram/model/Section.class
 team/projectpulse/ram/repository/StudentRepository.class
 team/projectpulse/ram/model/Student.class
 team/projectpulse/ram/dto/SectionResponse.class
+team/projectpulse/ram/dto/TeamResponse.class
 team/projectpulse/ram/dto/RubricDetailResponse.class
 team/projectpulse/ram/service/RubricService.class
 team/projectpulse/ram/exception/DuplicateResourceException.class
