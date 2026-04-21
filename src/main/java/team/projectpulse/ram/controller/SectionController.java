@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+import team.projectpulse.ram.dto.ActiveWeeksRequest;
 import team.projectpulse.ram.dto.SectionDetailResponse;
 import team.projectpulse.ram.dto.SectionRequest;
 import team.projectpulse.ram.dto.SectionResponse;
@@ -58,5 +59,13 @@ public class SectionController {
             @RequestBody SectionRequest request
     ) {
         return ResponseEntity.ok(sectionService.updateSection(id, request));
+    }
+
+    @PutMapping("/{id}/active-weeks")
+    public ResponseEntity<SectionDetailResponse> setActiveWeeks(
+            @PathVariable Long id,
+            @RequestBody ActiveWeeksRequest request
+    ) {
+        return ResponseEntity.ok(sectionService.setActiveWeeks(id, request));
     }
 }

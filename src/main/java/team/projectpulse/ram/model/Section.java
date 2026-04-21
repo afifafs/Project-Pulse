@@ -44,6 +44,9 @@ public class Section {
     @OneToMany(mappedBy = "section", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<Student> students = new ArrayList<>();
 
+    @OneToMany(mappedBy = "section", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private List<SectionWeek> weeks = new ArrayList<>();
+
     public Section() {
     }
 
@@ -117,5 +120,13 @@ public class Section {
 
     public void setStudents(List<Student> students) {
         this.students = students;
+    }
+
+    public List<SectionWeek> getWeeks() {
+        return weeks;
+    }
+
+    public void setWeeks(List<SectionWeek> weeks) {
+        this.weeks = weeks;
     }
 }

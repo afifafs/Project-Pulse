@@ -1,13 +1,19 @@
 package team.projectpulse.ram.service;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import team.projectpulse.ram.dto.ActiveWeeksRequest;
 import team.projectpulse.ram.dto.CriterionResponse;
 import team.projectpulse.ram.dto.RubricDetailResponse;
 import team.projectpulse.ram.dto.SectionRequest;
 import team.projectpulse.ram.dto.SectionDetailResponse;
+import team.projectpulse.ram.dto.SectionWeekResponse;
 import team.projectpulse.ram.dto.StudentResponse;
 import team.projectpulse.ram.dto.TeamDetailResponse;
 import team.projectpulse.ram.exception.DuplicateResourceException;
@@ -15,6 +21,7 @@ import team.projectpulse.ram.exception.InvalidSectionRequestException;
 import team.projectpulse.ram.exception.ResourceNotFoundException;
 import team.projectpulse.ram.model.Rubric;
 import team.projectpulse.ram.model.Section;
+import team.projectpulse.ram.model.SectionWeek;
 import team.projectpulse.ram.model.Team;
 import team.projectpulse.ram.repository.RubricRepository;
 import team.projectpulse.ram.repository.SectionRepository;
@@ -77,6 +84,32 @@ public class SectionService {
     }
 
     @Transactional
+    public SectionDetailResponse setActiveWeeks(Long id, ActiveWeeksRequest request) {
+        Section section = sectionRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Section not found with id: " + id));
+
+        validateSectionDateRange(section);
+
+        List<WeekRange> weekRanges = generateWeekRanges(section.getStartDate(), section.getEndDate());
+        Set<Integer> inactiveWeekNumbers = resolveInactiveWeekNumbers(request, weekRanges);
+
+        section.getWeeks().clear();
+        for (WeekRange weekRange : weekRanges) {
+            boolean active = !inactiveWeekNumbers.contains(weekRange.weekNumber());
+            section.getWeeks().add(new SectionWeek(
+                    weekRange.weekNumber(),
+                    weekRange.startDate(),
+                    weekRange.endDate(),
+                    active,
+                    section
+            ));
+        }
+
+        Section updatedSection = sectionRepository.save(section);
+        return mapToSectionDetailResponse(updatedSection);
+    }
+
+    @Transactional
     public SectionDetailResponse updateSection(Long id, SectionRequest request) {
         validateSectionRequest(request);
 
@@ -130,6 +163,79 @@ public class SectionService {
         }
     }
 
+    private void validateSectionDateRange(Section section) {
+        if (section.getStartDate() == null || section.getEndDate() == null) {
+            throw new InvalidSectionRequestException("Section startDate and endDate are required to set active weeks.");
+        }
+
+        if (section.getEndDate().isBefore(section.getStartDate())) {
+            throw new InvalidSectionRequestException("Section endDate cannot be before startDate.");
+        }
+    }
+
+    private Set<Integer> resolveInactiveWeekNumbers(ActiveWeeksRequest request, List<WeekRange> weekRanges) {
+        Set<Integer> inactiveWeekNumbers = new HashSet<>();
+        List<String> inactiveWeeks = request == null || request.getInactiveWeeks() == null
+                ? List.of()
+                : request.getInactiveWeeks();
+
+        for (String inactiveWeek : inactiveWeeks) {
+            if (inactiveWeek == null || inactiveWeek.trim().isEmpty()) {
+                throw new InvalidSectionRequestException("Inactive week values cannot be blank.");
+            }
+
+            inactiveWeekNumbers.add(resolveInactiveWeekNumber(inactiveWeek.trim(), weekRanges));
+        }
+
+        return inactiveWeekNumbers;
+    }
+
+    private Integer resolveInactiveWeekNumber(String inactiveWeek, List<WeekRange> weekRanges) {
+        if (inactiveWeek.chars().allMatch(Character::isDigit)) {
+            int weekNumber = Integer.parseInt(inactiveWeek);
+            if (weekRanges.stream().anyMatch(weekRange -> weekRange.weekNumber() == weekNumber)) {
+                return weekNumber;
+            }
+
+            throw new InvalidSectionRequestException("Inactive week ID is outside the section range: " + inactiveWeek);
+        }
+
+        try {
+            LocalDate inactiveDate = LocalDate.parse(inactiveWeek);
+            return weekRanges.stream()
+                    .filter(weekRange -> !inactiveDate.isBefore(weekRange.startDate())
+                            && !inactiveDate.isAfter(weekRange.endDate()))
+                    .findFirst()
+                    .map(WeekRange::weekNumber)
+                    .orElseThrow(() -> new InvalidSectionRequestException(
+                            "Inactive week date is outside the section range: " + inactiveWeek
+                    ));
+        } catch (DateTimeParseException exception) {
+            throw new InvalidSectionRequestException(
+                    "Inactive weeks must be week IDs or ISO dates like 2026-09-07."
+            );
+        }
+    }
+
+    private List<WeekRange> generateWeekRanges(LocalDate startDate, LocalDate endDate) {
+        List<WeekRange> weekRanges = new java.util.ArrayList<>();
+        LocalDate weekStart = startDate;
+        int weekNumber = 1;
+
+        while (!weekStart.isAfter(endDate)) {
+            LocalDate weekEnd = weekStart.plusDays(6);
+            if (weekEnd.isAfter(endDate)) {
+                weekEnd = endDate;
+            }
+
+            weekRanges.add(new WeekRange(weekNumber, weekStart, weekEnd));
+            weekStart = weekEnd.plusDays(1);
+            weekNumber++;
+        }
+
+        return weekRanges;
+    }
+
     private SectionDetailResponse mapToSectionDetailResponse(Section section) {
         List<TeamDetailResponse> teams = section.getTeams().stream()
                 .map(this::mapToTeamDetailResponse)
@@ -149,7 +255,11 @@ public class SectionService {
                 teams,
                 unassignedStudents,
                 List.copyOf(section.getInstructors()),
-                mapToRubricDetailResponse(section.getRubric())
+                mapToRubricDetailResponse(section.getRubric()),
+                section.getWeeks().stream()
+                        .filter(week -> Boolean.TRUE.equals(week.getActive()))
+                        .map(SectionWeekResponse::fromEntity)
+                        .toList()
         );
     }
 
@@ -174,7 +284,10 @@ public class SectionService {
                 rubric.getId(),
                 rubric.getName(),
                 rubric.getDescription(),
-                criteria
+            criteria
         );
+    }
+
+    private record WeekRange(Integer weekNumber, LocalDate startDate, LocalDate endDate) {
     }
 }

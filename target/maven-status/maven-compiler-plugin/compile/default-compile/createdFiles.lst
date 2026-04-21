@@ -1,4 +1,5 @@
 team/projectpulse/ram/exception/InvalidRubricRequestException.class
+team/projectpulse/ram/service/SectionService$WeekRange.class
 team/projectpulse/ram/repository/SectionRepository.class
 team/projectpulse/ram/repository/RubricRepository.class
 team/projectpulse/ram/controller/RubricController.class
@@ -10,6 +11,7 @@ team/projectpulse/ram/repository/TeamRepository.class
 team/projectpulse/ram/exception/InvalidSectionRequestException.class
 team/projectpulse/ram/exception/ResourceNotFoundException.class
 team/projectpulse/ram/dto/StudentResponse.class
+team/projectpulse/ram/model/SectionWeek.class
 team/projectpulse/ram/dto/CriterionRequest.class
 team/projectpulse/ram/service/TeamService.class
 team/projectpulse/ram/model/Section.class
@@ -25,7 +27,9 @@ team/projectpulse/ram/dto/SectionDetailResponse.class
 team/projectpulse/ram/service/CriterionService.class
 team/projectpulse/ram/repository/CriterionRepository.class
 team/projectpulse/ram/service/SectionService.class
+team/projectpulse/ram/dto/ActiveWeeksRequest.class
 team/projectpulse/ram/PeerEvaluationSystemApplication.class
 team/projectpulse/ram/model/Criterion.class
 team/projectpulse/ram/dto/TeamDetailResponse.class
 team/projectpulse/ram/dto/CriterionResponse.class
+team/projectpulse/ram/dto/SectionWeekResponse.class
