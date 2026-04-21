@@ -9,6 +9,8 @@ import team.projectpulse.ram.model.Team;
 
 public interface TeamRepository extends JpaRepository<Team, Long> {
 
+    boolean existsByNameIgnoreCase(String name);
+
     @Query("""
             select distinct team
             from Team team
