@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -47,5 +48,13 @@ public class TeamController {
     @GetMapping("/{id}")
     public ResponseEntity<TeamResponse> getTeamDetails(@PathVariable Long id) {
         return ResponseEntity.ok(teamService.getTeamDetails(id));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<TeamResponse> updateTeam(
+            @PathVariable Long id,
+            @RequestBody TeamRequest request
+    ) {
+        return ResponseEntity.ok(teamService.updateTeam(id, request));
     }
 }

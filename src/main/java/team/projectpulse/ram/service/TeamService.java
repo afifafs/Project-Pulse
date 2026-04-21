@@ -73,6 +73,27 @@ public class TeamService {
         return null;
     }
 
+    @Transactional
+    public TeamResponse updateTeam(Long id, TeamRequest request) {
+        validateTeamUpdateRequest(request);
+
+        Team team = teamRepository.findByIdWithDetails(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Team not found with id: " + id));
+
+        String updatedName = request.getName().trim();
+        if (!team.getName().equalsIgnoreCase(updatedName)
+                && teamRepository.existsByNameIgnoreCaseAndIdNot(updatedName, id)) {
+            throw new DuplicateResourceException("A team with this name already exists.");
+        }
+
+        team.setName(updatedName);
+        team.setDescription(request.getDescription());
+        team.setWebsite(request.getWebsite());
+
+        Team updatedTeam = teamRepository.save(team);
+        return TeamResponse.fromEntity(updatedTeam);
+    }
+
     public void deleteTeam(Long id) {
     }
 
@@ -91,6 +112,16 @@ public class TeamService {
 
         if (request.getSectionId() == null) {
             throw new InvalidTeamRequestException("sectionId is required.");
+        }
+    }
+
+    private void validateTeamUpdateRequest(TeamRequest request) {
+        if (request == null) {
+            throw new InvalidTeamRequestException("Team request is required.");
+        }
+
+        if (request.getName() == null || request.getName().trim().isEmpty()) {
+            throw new InvalidTeamRequestException("Team name is required.");
         }
     }
 

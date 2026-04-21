@@ -11,6 +11,8 @@ public interface TeamRepository extends JpaRepository<Team, Long> {
 
     boolean existsByNameIgnoreCase(String name);
 
+    boolean existsByNameIgnoreCaseAndIdNot(String name, Long id);
+
     @Query("""
             select distinct team
             from Team team
