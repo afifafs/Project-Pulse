@@ -1,5 +1,6 @@
 package team.projectpulse.ram.model;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -21,6 +22,7 @@ public class Student {
 
     private String lastName;
 
+    @Column(unique = true)
     private String email;
 
     @ManyToOne(fetch = FetchType.LAZY)

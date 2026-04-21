@@ -11,6 +11,7 @@ team/projectpulse/ram/dto/RubricRequest.class
 team/projectpulse/ram/repository/TeamRepository.class
 team/projectpulse/ram/exception/InvalidSectionRequestException.class
 team/projectpulse/ram/exception/ResourceNotFoundException.class
+team/projectpulse/ram/dto/InviteStudentsRequest.class
 team/projectpulse/ram/dto/StudentResponse.class
 team/projectpulse/ram/model/SectionWeek.class
 team/projectpulse/ram/dto/CriterionRequest.class
@@ -25,6 +26,7 @@ team/projectpulse/ram/dto/TeamResponse.class
 team/projectpulse/ram/dto/RubricDetailResponse.class
 team/projectpulse/ram/service/RubricService.class
 team/projectpulse/ram/exception/DuplicateResourceException.class
+team/projectpulse/ram/dto/InviteStudentsResponse.class
 team/projectpulse/ram/controller/SectionController.class
 team/projectpulse/ram/dto/SectionRequest.class
 team/projectpulse/ram/dto/SectionDetailResponse.class
@@ -33,7 +35,9 @@ team/projectpulse/ram/repository/CriterionRepository.class
 team/projectpulse/ram/service/SectionService.class
 team/projectpulse/ram/dto/ActiveWeeksRequest.class
 team/projectpulse/ram/PeerEvaluationSystemApplication.class
+team/projectpulse/ram/controller/StudentController.class
 team/projectpulse/ram/model/Criterion.class
 team/projectpulse/ram/dto/TeamDetailResponse.class
+team/projectpulse/ram/exception/InvalidStudentInviteRequestException.class
 team/projectpulse/ram/dto/CriterionResponse.class
 team/projectpulse/ram/dto/SectionWeekResponse.class
