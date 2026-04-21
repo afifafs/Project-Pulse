@@ -5,6 +5,7 @@ team/projectpulse/ram/repository/SectionRepository.class
 team/projectpulse/ram/repository/RubricRepository.class
 team/projectpulse/ram/controller/RubricController.class
 team/projectpulse/ram/service/StudentService.class
+team/projectpulse/ProjectPulseApplication.class
 team/projectpulse/ram/model/Team.class
 team/projectpulse/ram/model/Rubric.class
 team/projectpulse/ram/dto/RubricRequest.class
@@ -35,7 +36,6 @@ team/projectpulse/ram/service/CriterionService.class
 team/projectpulse/ram/repository/CriterionRepository.class
 team/projectpulse/ram/service/SectionService.class
 team/projectpulse/ram/dto/ActiveWeeksRequest.class
-team/projectpulse/ram/PeerEvaluationSystemApplication.class
 team/projectpulse/ram/controller/StudentController.class
 team/projectpulse/ram/model/Criterion.class
 team/projectpulse/ram/dto/TeamDetailResponse.class
