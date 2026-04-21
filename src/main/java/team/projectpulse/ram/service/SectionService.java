@@ -3,6 +3,7 @@ package team.projectpulse.ram.service;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import team.projectpulse.ram.model.Section;
 import team.projectpulse.ram.repository.SectionRepository;
 
@@ -21,6 +22,15 @@ public class SectionService {
 
     public Optional<Section> getSectionById(Long id) {
         return Optional.empty();
+    }
+
+    @Transactional(readOnly = true)
+    public List<Section> findSections(String name) {
+        if (name == null || name.trim().isEmpty()) {
+            return sectionRepository.findAllByOrderByNameDesc();
+        }
+
+        return sectionRepository.findByNameContainingIgnoreCaseOrderByNameDesc(name.trim());
     }
 
     public List<Section> getAllSections() {

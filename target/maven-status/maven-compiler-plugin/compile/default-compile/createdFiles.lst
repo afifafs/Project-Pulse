@@ -8,8 +8,10 @@ team/projectpulse/ram/repository/RubricRepository.class
 team/projectpulse/ram/controller/RubricController.class
 team/projectpulse/ram/model/Student.class
 team/projectpulse/ram/service/StudentService.class
+team/projectpulse/ram/dto/SectionResponse.class
 team/projectpulse/ram/service/RubricService.class
 team/projectpulse/ram/exception/DuplicateResourceException.class
+team/projectpulse/ram/controller/SectionController.class
 team/projectpulse/ram/model/Team.class
 team/projectpulse/ram/model/Rubric.class
 team/projectpulse/ram/dto/RubricRequest.class

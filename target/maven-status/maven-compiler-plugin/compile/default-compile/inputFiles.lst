@@ -1,7 +1,9 @@
 /Users/kayleewebb/Downloads/project-pulse-main/backend/src/main/java/team/projectpulse/ram/PeerEvaluationSystemApplication.java
 /Users/kayleewebb/Downloads/project-pulse-main/backend/src/main/java/team/projectpulse/ram/controller/RubricController.java
+/Users/kayleewebb/Downloads/project-pulse-main/backend/src/main/java/team/projectpulse/ram/controller/SectionController.java
 /Users/kayleewebb/Downloads/project-pulse-main/backend/src/main/java/team/projectpulse/ram/dto/CriterionRequest.java
 /Users/kayleewebb/Downloads/project-pulse-main/backend/src/main/java/team/projectpulse/ram/dto/RubricRequest.java
+/Users/kayleewebb/Downloads/project-pulse-main/backend/src/main/java/team/projectpulse/ram/dto/SectionResponse.java
 /Users/kayleewebb/Downloads/project-pulse-main/backend/src/main/java/team/projectpulse/ram/exception/DuplicateResourceException.java
 /Users/kayleewebb/Downloads/project-pulse-main/backend/src/main/java/team/projectpulse/ram/exception/InvalidRubricRequestException.java
 /Users/kayleewebb/Downloads/project-pulse-main/backend/src/main/java/team/projectpulse/ram/model/Criterion.java
