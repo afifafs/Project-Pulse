@@ -1,17 +1,22 @@
 package team.projectpulse.ram.service;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import team.projectpulse.ram.dto.AssignStudentsRequest;
 import team.projectpulse.ram.dto.TeamRequest;
 import team.projectpulse.ram.dto.TeamResponse;
 import team.projectpulse.ram.exception.DuplicateResourceException;
 import team.projectpulse.ram.exception.InvalidTeamRequestException;
 import team.projectpulse.ram.exception.ResourceNotFoundException;
 import team.projectpulse.ram.model.Section;
+import team.projectpulse.ram.model.Student;
 import team.projectpulse.ram.model.Team;
 import team.projectpulse.ram.repository.SectionRepository;
+import team.projectpulse.ram.repository.StudentRepository;
 import team.projectpulse.ram.repository.TeamRepository;
 
 @Service
@@ -19,10 +24,16 @@ public class TeamService {
 
     private final TeamRepository teamRepository;
     private final SectionRepository sectionRepository;
+    private final StudentRepository studentRepository;
 
-    public TeamService(TeamRepository teamRepository, SectionRepository sectionRepository) {
+    public TeamService(
+            TeamRepository teamRepository,
+            SectionRepository sectionRepository,
+            StudentRepository studentRepository
+    ) {
         this.teamRepository = teamRepository;
         this.sectionRepository = sectionRepository;
+        this.studentRepository = studentRepository;
     }
 
     public Team createTeam(Team team) {
@@ -71,6 +82,39 @@ public class TeamService {
 
     public Team updateTeam(Long id, Team team) {
         return null;
+    }
+
+    @Transactional
+    public TeamResponse assignStudentsToTeam(Long teamId, AssignStudentsRequest request) {
+        Team team = teamRepository.findByIdWithDetails(teamId)
+                .orElseThrow(() -> new ResourceNotFoundException("Team not found with id: " + teamId));
+
+        Set<Long> studentIds = validateAndNormalizeStudentIds(request);
+        List<Student> students = studentRepository.findByIdIn(studentIds);
+
+        if (students.size() != studentIds.size()) {
+            Set<Long> foundStudentIds = students.stream()
+                    .map(Student::getId)
+                    .collect(java.util.stream.Collectors.toSet());
+            Long missingStudentId = studentIds.stream()
+                    .filter(studentId -> !foundStudentIds.contains(studentId))
+                    .findFirst()
+                    .orElse(null);
+
+            throw new ResourceNotFoundException("Student not found with id: " + missingStudentId);
+        }
+
+        for (Student student : students) {
+            student.setTeam(team);
+            if (student.getSection() == null) {
+                student.setSection(team.getSection());
+            }
+        }
+
+        studentRepository.saveAll(students);
+        team.setStudents(students);
+
+        return TeamResponse.fromEntity(team);
     }
 
     @Transactional
@@ -123,6 +167,23 @@ public class TeamService {
         if (request.getName() == null || request.getName().trim().isEmpty()) {
             throw new InvalidTeamRequestException("Team name is required.");
         }
+    }
+
+    private Set<Long> validateAndNormalizeStudentIds(AssignStudentsRequest request) {
+        if (request == null || request.getStudentIds() == null || request.getStudentIds().isEmpty()) {
+            throw new InvalidTeamRequestException("At least one studentId is required.");
+        }
+
+        Set<Long> studentIds = new HashSet<>();
+        for (Long studentId : request.getStudentIds()) {
+            if (studentId == null) {
+                throw new InvalidTeamRequestException("studentIds cannot contain null values.");
+            }
+
+            studentIds.add(studentId);
+        }
+
+        return studentIds;
     }
 
     private String normalizeFilter(String value) {

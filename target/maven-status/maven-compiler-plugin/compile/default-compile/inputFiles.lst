@@ -4,6 +4,7 @@
 /Users/kayleewebb/Downloads/project-pulse-main/backend/src/main/java/team/projectpulse/ram/controller/StudentController.java
 /Users/kayleewebb/Downloads/project-pulse-main/backend/src/main/java/team/projectpulse/ram/controller/TeamController.java
 /Users/kayleewebb/Downloads/project-pulse-main/backend/src/main/java/team/projectpulse/ram/dto/ActiveWeeksRequest.java
+/Users/kayleewebb/Downloads/project-pulse-main/backend/src/main/java/team/projectpulse/ram/dto/AssignStudentsRequest.java
 /Users/kayleewebb/Downloads/project-pulse-main/backend/src/main/java/team/projectpulse/ram/dto/CriterionRequest.java
 /Users/kayleewebb/Downloads/project-pulse-main/backend/src/main/java/team/projectpulse/ram/dto/CriterionResponse.java
 /Users/kayleewebb/Downloads/project-pulse-main/backend/src/main/java/team/projectpulse/ram/dto/InviteStudentsRequest.java

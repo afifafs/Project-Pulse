@@ -10,6 +10,7 @@ team/projectpulse/ram/model/Rubric.class
 team/projectpulse/ram/dto/RubricRequest.class
 team/projectpulse/ram/repository/TeamRepository.class
 team/projectpulse/ram/exception/InvalidSectionRequestException.class
+team/projectpulse/ram/dto/AssignStudentsRequest.class
 team/projectpulse/ram/exception/ResourceNotFoundException.class
 team/projectpulse/ram/dto/InviteStudentsRequest.class
 team/projectpulse/ram/dto/StudentResponse.class
