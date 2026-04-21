@@ -6,11 +6,13 @@
 /Users/kayleewebb/Downloads/project-pulse-main/backend/src/main/java/team/projectpulse/ram/dto/RubricDetailResponse.java
 /Users/kayleewebb/Downloads/project-pulse-main/backend/src/main/java/team/projectpulse/ram/dto/RubricRequest.java
 /Users/kayleewebb/Downloads/project-pulse-main/backend/src/main/java/team/projectpulse/ram/dto/SectionDetailResponse.java
+/Users/kayleewebb/Downloads/project-pulse-main/backend/src/main/java/team/projectpulse/ram/dto/SectionRequest.java
 /Users/kayleewebb/Downloads/project-pulse-main/backend/src/main/java/team/projectpulse/ram/dto/SectionResponse.java
 /Users/kayleewebb/Downloads/project-pulse-main/backend/src/main/java/team/projectpulse/ram/dto/StudentResponse.java
 /Users/kayleewebb/Downloads/project-pulse-main/backend/src/main/java/team/projectpulse/ram/dto/TeamDetailResponse.java
 /Users/kayleewebb/Downloads/project-pulse-main/backend/src/main/java/team/projectpulse/ram/exception/DuplicateResourceException.java
 /Users/kayleewebb/Downloads/project-pulse-main/backend/src/main/java/team/projectpulse/ram/exception/InvalidRubricRequestException.java
+/Users/kayleewebb/Downloads/project-pulse-main/backend/src/main/java/team/projectpulse/ram/exception/InvalidSectionRequestException.java
 /Users/kayleewebb/Downloads/project-pulse-main/backend/src/main/java/team/projectpulse/ram/exception/ResourceNotFoundException.java
 /Users/kayleewebb/Downloads/project-pulse-main/backend/src/main/java/team/projectpulse/ram/model/Criterion.java
 /Users/kayleewebb/Downloads/project-pulse-main/backend/src/main/java/team/projectpulse/ram/model/Rubric.java

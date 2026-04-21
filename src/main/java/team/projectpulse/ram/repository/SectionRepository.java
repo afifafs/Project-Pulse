@@ -6,6 +6,8 @@ import team.projectpulse.ram.model.Section;
 
 public interface SectionRepository extends JpaRepository<Section, Long> {
 
+    boolean existsByNameIgnoreCase(String name);
+
     List<Section> findByNameContainingIgnoreCaseOrderByNameDesc(String name);
 
     List<Section> findAllByOrderByNameDesc();
