@@ -1,6 +1,7 @@
 package team.projectpulse.ram.repository;
 
 import java.util.List;
+import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -21,4 +22,13 @@ public interface TeamRepository extends JpaRepository<Team, Long> {
             @Param("sectionName") String sectionName,
             @Param("teamName") String teamName
     );
+
+    @Query("""
+            select distinct team
+            from Team team
+            left join fetch team.section section
+            left join fetch team.students students
+            where team.id = :id
+            """)
+    Optional<Team> findByIdWithDetails(@Param("id") Long id);
 }

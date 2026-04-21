@@ -5,6 +5,7 @@ import java.util.Optional;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import team.projectpulse.ram.dto.TeamResponse;
+import team.projectpulse.ram.exception.ResourceNotFoundException;
 import team.projectpulse.ram.model.Team;
 import team.projectpulse.ram.repository.TeamRepository;
 
@@ -30,6 +31,14 @@ public class TeamService {
         return teamRepository.findTeams(normalizeFilter(sectionName), normalizeFilter(teamName)).stream()
                 .map(TeamResponse::fromEntity)
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public TeamResponse getTeamDetails(Long id) {
+        Team team = teamRepository.findByIdWithDetails(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Team not found with id: " + id));
+
+        return TeamResponse.fromEntity(team);
     }
 
     public List<Team> getAllTeams() {
