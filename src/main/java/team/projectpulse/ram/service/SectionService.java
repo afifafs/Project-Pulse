@@ -76,6 +76,31 @@ public class SectionService {
         return null;
     }
 
+    @Transactional
+    public SectionDetailResponse updateSection(Long id, SectionRequest request) {
+        validateSectionRequest(request);
+
+        Section section = sectionRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Section not found with id: " + id));
+
+        String updatedName = request.getName().trim();
+        if (!section.getName().equalsIgnoreCase(updatedName)
+                && sectionRepository.existsByNameIgnoreCaseAndIdNot(updatedName, id)) {
+            throw new DuplicateResourceException("A section with this name already exists.");
+        }
+
+        Rubric rubric = rubricRepository.findById(request.getRubricId())
+                .orElseThrow(() -> new ResourceNotFoundException("Rubric not found with id: " + request.getRubricId()));
+
+        section.setName(updatedName);
+        section.setStartDate(request.getStartDate());
+        section.setEndDate(request.getEndDate());
+        section.setRubric(rubric);
+
+        Section updatedSection = sectionRepository.save(section);
+        return mapToSectionDetailResponse(updatedSection);
+    }
+
     public void deleteSection(Long id) {
     }
 

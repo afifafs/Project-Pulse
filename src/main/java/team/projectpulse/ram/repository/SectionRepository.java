@@ -8,6 +8,8 @@ public interface SectionRepository extends JpaRepository<Section, Long> {
 
     boolean existsByNameIgnoreCase(String name);
 
+    boolean existsByNameIgnoreCaseAndIdNot(String name, Long id);
+
     List<Section> findByNameContainingIgnoreCaseOrderByNameDesc(String name);
 
     List<Section> findAllByOrderByNameDesc();
