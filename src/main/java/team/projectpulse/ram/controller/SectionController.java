@@ -6,6 +6,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.PathVariable;
+import team.projectpulse.ram.dto.SectionDetailResponse;
 import team.projectpulse.ram.dto.SectionResponse;
 import team.projectpulse.ram.service.SectionService;
 
@@ -26,5 +28,10 @@ public class SectionController {
                 .toList();
 
         return ResponseEntity.ok(sections);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<SectionDetailResponse> getSectionDetails(@PathVariable Long id) {
+        return ResponseEntity.ok(sectionService.getSectionDetails(id));
     }
 }

@@ -27,6 +27,10 @@ public class Student {
     @JoinColumn(name = "team_id")
     private Team team;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "section_id")
+    private Section section;
+
     public Student() {
     }
 
@@ -68,5 +72,13 @@ public class Student {
 
     public void setTeam(Team team) {
         this.team = team;
+    }
+
+    public Section getSection() {
+        return section;
+    }
+
+    public void setSection(Section section) {
+        this.section = section;
     }
 }
