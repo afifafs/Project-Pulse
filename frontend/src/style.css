@@ -253,6 +253,10 @@ select:focus {
   font-weight: 600;
 }
 
+.teams-table {
+  min-width: 680px;
+}
+
 .rubric-create-panel {
   max-width: 860px;
 }

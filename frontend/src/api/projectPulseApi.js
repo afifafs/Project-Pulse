@@ -36,6 +36,14 @@ export function getSectionDetails(id) {
   return request(`/sections/${id}`)
 }
 
+export function getTeams(sectionId = '') {
+  if (sectionId) {
+    return getSectionDetails(sectionId).then((section) => section.teams ?? [])
+  }
+
+  return request('/teams')
+}
+
 export function createSection(payload) {
   return request('/sections', {
     method: 'POST',

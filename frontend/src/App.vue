@@ -1,5 +1,5 @@
 <script setup>
-import SectionActiveWeeksView from './views/SectionActiveWeeksView.vue'
+import SeniorDesignTeamsView from './views/SeniorDesignTeamsView.vue'
 </script>
 
 <template>
@@ -7,13 +7,13 @@ import SectionActiveWeeksView from './views/SectionActiveWeeksView.vue'
     <header class="app-header">
       <div>
         <p class="eyebrow">Project Pulse</p>
-        <h1>Set active weeks</h1>
+        <h1>Senior design teams</h1>
       </div>
       <p class="header-copy">
-        Load a senior design section and choose which weeks are active.
+        Find teams and optionally filter by senior design section.
       </p>
     </header>
 
-    <SectionActiveWeeksView />
+    <SeniorDesignTeamsView />
   </main>
 </template>
