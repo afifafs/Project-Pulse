@@ -36,6 +36,13 @@ export function getSectionDetails(id) {
   return request(`/sections/${id}`)
 }
 
+export function createSection(payload) {
+  return request('/sections', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
 export function createRubric(payload) {
   return request('/rubrics', {
     method: 'POST',
