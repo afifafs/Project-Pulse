@@ -1,5 +1,5 @@
 <script setup>
-import SectionDirectory from './views/SectionDirectory.vue'
+import SeniorDesignSectionsView from './views/SeniorDesignSectionsView.vue'
 </script>
 
 <template>
@@ -14,6 +14,6 @@ import SectionDirectory from './views/SectionDirectory.vue'
       </p>
     </header>
 
-    <SectionDirectory />
+    <SeniorDesignSectionsView />
   </main>
 </template>

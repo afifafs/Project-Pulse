@@ -168,6 +168,16 @@ textarea:focus {
   margin-bottom: 18px;
 }
 
+.result-count {
+  border-radius: 999px;
+  background: var(--panel-soft);
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+  padding: 6px 10px;
+  white-space: nowrap;
+}
+
 .search-form,
 .rubric-form,
 .criteria-editor {
