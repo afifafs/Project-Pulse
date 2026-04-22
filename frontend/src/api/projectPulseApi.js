@@ -48,6 +48,13 @@ export function getTeamDetails(id) {
   return request(`/teams/${id}`)
 }
 
+export function createTeam(payload) {
+  return request('/teams', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
 export function createSection(payload) {
   return request('/sections', {
     method: 'POST',
