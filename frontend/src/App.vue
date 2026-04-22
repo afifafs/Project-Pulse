@@ -1,5 +1,5 @@
 <script setup>
-import SeniorDesignSectionEditView from './views/SeniorDesignSectionEditView.vue'
+import SectionActiveWeeksView from './views/SectionActiveWeeksView.vue'
 </script>
 
 <template>
@@ -7,13 +7,13 @@ import SeniorDesignSectionEditView from './views/SeniorDesignSectionEditView.vue
     <header class="app-header">
       <div>
         <p class="eyebrow">Project Pulse</p>
-        <h1>Edit senior design section</h1>
+        <h1>Set active weeks</h1>
       </div>
       <p class="header-copy">
-        Load an existing section, update its course details, and save changes.
+        Load a senior design section and choose which weeks are active.
       </p>
     </header>
 
-    <SeniorDesignSectionEditView />
+    <SectionActiveWeeksView />
   </main>
 </template>

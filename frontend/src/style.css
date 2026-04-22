@@ -265,6 +265,72 @@ select:focus {
   margin-top: 18px;
 }
 
+.active-weeks-workspace {
+  display: grid;
+  gap: 16px;
+  margin-top: 18px;
+}
+
+.section-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel-soft);
+  padding: 14px;
+}
+
+.current-weeks-box {
+  display: grid;
+  gap: 4px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+  padding: 14px;
+}
+
+.current-weeks-box p {
+  color: var(--muted);
+}
+
+.week-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.weeks-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px;
+}
+
+.weeks-grid legend {
+  color: var(--text);
+  font-weight: 800;
+  padding: 0 6px;
+}
+
+.week-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+  padding: 10px;
+}
+
+.week-option input {
+  width: auto;
+}
+
 .form-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -514,6 +580,7 @@ select:focus {
   .app-header,
   .panel-header,
   .detail-header,
+  .section-summary,
   .criteria-toolbar,
   .criterion-header {
     align-items: stretch;
@@ -530,6 +597,10 @@ select:focus {
 
   .form-grid {
     grid-template-columns: 1fr;
+  }
+
+  .weeks-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .date-range {

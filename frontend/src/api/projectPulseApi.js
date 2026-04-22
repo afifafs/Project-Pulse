@@ -50,6 +50,13 @@ export function updateSection(id, payload) {
   })
 }
 
+export function updateSectionActiveWeeks(id, activeWeeks) {
+  return request(`/sections/${id}/active-weeks`, {
+    method: 'PATCH',
+    body: JSON.stringify({ activeWeeks }),
+  })
+}
+
 export function createRubric(payload) {
   return request('/rubrics', {
     method: 'POST',
