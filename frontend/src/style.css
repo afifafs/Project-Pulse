@@ -369,6 +369,11 @@ select:focus {
   gap: 12px;
 }
 
+.member-editor-list {
+  display: grid;
+  gap: 12px;
+}
+
 .criterion-card {
   display: grid;
   gap: 14px;

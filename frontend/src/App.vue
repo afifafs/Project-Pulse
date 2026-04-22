@@ -1,5 +1,5 @@
 <script setup>
-import SeniorDesignTeamCreateView from './views/SeniorDesignTeamCreateView.vue'
+import SeniorDesignTeamEditView from './views/SeniorDesignTeamEditView.vue'
 </script>
 
 <template>
@@ -7,13 +7,13 @@ import SeniorDesignTeamCreateView from './views/SeniorDesignTeamCreateView.vue'
     <header class="app-header">
       <div>
         <p class="eyebrow">Project Pulse</p>
-        <h1>Create senior design team</h1>
+        <h1>Edit senior design team</h1>
       </div>
       <p class="header-copy">
-        Create a team and assign it to a senior design section.
+        Load a team, update its name and members, then save changes.
       </p>
     </header>
 
-    <SeniorDesignTeamCreateView />
+    <SeniorDesignTeamEditView />
   </main>
 </template>

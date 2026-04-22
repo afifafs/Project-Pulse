@@ -55,6 +55,13 @@ export function createTeam(payload) {
   })
 }
 
+export function updateTeam(id, payload) {
+  return request(`/teams/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  })
+}
+
 export function createSection(payload) {
   return request('/sections', {
     method: 'POST',
