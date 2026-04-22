@@ -83,6 +83,13 @@ export function updateSectionActiveWeeks(id, activeWeeks) {
   })
 }
 
+export function inviteStudentsToSection(sectionId, emails) {
+  return request(`/sections/${sectionId}/invitations`, {
+    method: 'POST',
+    body: JSON.stringify({ emails }),
+  })
+}
+
 export function createRubric(payload) {
   return request('/rubrics', {
     method: 'POST',
