@@ -1,5 +1,5 @@
 <script setup>
-import SectionStudentInviteView from './views/SectionStudentInviteView.vue'
+import SectionTeamAssignmentsView from './views/SectionTeamAssignmentsView.vue'
 </script>
 
 <template>
@@ -7,13 +7,13 @@ import SectionStudentInviteView from './views/SectionStudentInviteView.vue'
     <header class="app-header">
       <div>
         <p class="eyebrow">Project Pulse</p>
-        <h1>Invite students</h1>
+        <h1>Assign students</h1>
       </div>
       <p class="header-copy">
-        Send section invitations to one or more student email addresses.
+        Assign senior design students to teams in a selected section.
       </p>
     </header>
 
-    <SectionStudentInviteView />
+    <SectionTeamAssignmentsView />
   </main>
 </template>

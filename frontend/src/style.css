@@ -257,6 +257,10 @@ select:focus {
   min-width: 680px;
 }
 
+.assignment-table {
+  min-width: 720px;
+}
+
 .rubric-create-panel {
   max-width: 860px;
 }
@@ -270,6 +274,12 @@ select:focus {
 }
 
 .active-weeks-workspace {
+  display: grid;
+  gap: 16px;
+  margin-top: 18px;
+}
+
+.assignment-workspace {
   display: grid;
   gap: 16px;
   margin-top: 18px;

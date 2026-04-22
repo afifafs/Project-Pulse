@@ -90,6 +90,13 @@ export function inviteStudentsToSection(sectionId, emails) {
   })
 }
 
+export function assignStudentsToTeams(sectionId, assignments) {
+  return request(`/sections/${sectionId}/team-assignments`, {
+    method: 'PATCH',
+    body: JSON.stringify({ assignments }),
+  })
+}
+
 export function createRubric(payload) {
   return request('/rubrics', {
     method: 'POST',
