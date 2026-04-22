@@ -177,7 +177,7 @@ textarea:focus {
 
 .search-row {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: 1fr auto auto;
   gap: 10px;
 }
 
@@ -197,6 +197,48 @@ textarea:focus {
   background: var(--accent-dark);
 }
 
+.secondary-button {
+  background: #264653;
+}
+
+.table-wrap {
+  width: 100%;
+  margin-top: 18px;
+  overflow-x: auto;
+}
+
+.sections-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 560px;
+}
+
+.sections-table th,
+.sections-table td {
+  border-bottom: 1px solid var(--border);
+  padding: 13px 12px;
+  text-align: left;
+}
+
+.sections-table th {
+  background: var(--panel-soft);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.sections-table td {
+  color: var(--text);
+  font-weight: 650;
+}
+
+.sections-table td:nth-child(2),
+.sections-table td:nth-child(3) {
+  color: var(--muted);
+  font-weight: 600;
+}
+
 .rubric-create-panel {
   max-width: 860px;
 }
@@ -207,11 +249,6 @@ textarea:focus {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-}
-
-.secondary-button {
-  background: #264653;
-  padding: 8px 12px;
 }
 
 .criterion-card {
