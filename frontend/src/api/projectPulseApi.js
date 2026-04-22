@@ -43,6 +43,13 @@ export function createSection(payload) {
   })
 }
 
+export function updateSection(id, payload) {
+  return request(`/sections/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  })
+}
+
 export function createRubric(payload) {
   return request('/rubrics', {
     method: 'POST',
