@@ -1,0 +1,37 @@
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? ''
+
+async function request(path, options = {}) {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+    ...options,
+  })
+
+  const contentType = response.headers.get('content-type') ?? ''
+  const data = contentType.includes('application/json') ? await response.json() : null
+
+  if (!response.ok) {
+    const message = data?.message || data?.error || `Request failed with status ${response.status}`
+    throw new Error(message)
+  }
+
+  return data
+}
+
+export function getSections(name = '') {
+  const params = new URLSearchParams()
+
+  if (name.trim()) {
+    params.set('name', name.trim())
+  }
+
+  const query = params.toString()
+  return request(`/sections${query ? `?${query}` : ''}`)
+}
+
+export function getSectionDetails(id) {
+  return request(`/sections/${id}`)
+}
