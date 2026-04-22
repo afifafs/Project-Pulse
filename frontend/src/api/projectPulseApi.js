@@ -35,3 +35,10 @@ export function getSections(name = '') {
 export function getSectionDetails(id) {
   return request(`/sections/${id}`)
 }
+
+export function createRubric(payload) {
+  return request('/rubrics', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}

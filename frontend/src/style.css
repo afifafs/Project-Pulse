@@ -168,7 +168,9 @@ textarea:focus {
   margin-bottom: 18px;
 }
 
-.search-form {
+.search-form,
+.rubric-form,
+.criteria-editor {
   display: grid;
   gap: 16px;
 }
@@ -179,7 +181,9 @@ textarea:focus {
   gap: 10px;
 }
 
-.search-row button {
+.search-row button,
+.submit-button,
+.secondary-button {
   border-radius: 8px;
   background: var(--accent);
   color: #fff;
@@ -187,8 +191,55 @@ textarea:focus {
   padding: 10px 14px;
 }
 
-.search-row button:hover {
+.search-row button:hover,
+.submit-button:hover,
+.secondary-button:hover {
   background: var(--accent-dark);
+}
+
+.rubric-create-panel {
+  max-width: 860px;
+}
+
+.criteria-toolbar,
+.criterion-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.secondary-button {
+  background: #264653;
+  padding: 8px 12px;
+}
+
+.criterion-card {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+  padding: 14px;
+}
+
+.criterion-card legend {
+  color: var(--text);
+  font-weight: 800;
+}
+
+.text-button {
+  background: transparent;
+  color: var(--danger);
+  font-size: 13px;
+  font-weight: 800;
+  padding: 4px 0;
+}
+
+.submit-button {
+  justify-self: start;
+  min-width: 160px;
 }
 
 .section-layout {
@@ -344,6 +395,14 @@ textarea:focus {
   color: var(--danger);
 }
 
+.success-message {
+  border-radius: 8px;
+  background: var(--success-bg);
+  color: var(--success);
+  font-weight: 800;
+  padding: 12px;
+}
+
 .spinner {
   width: 18px;
   height: 18px;
@@ -372,7 +431,9 @@ textarea:focus {
 
   .app-header,
   .panel-header,
-  .detail-header {
+  .detail-header,
+  .criteria-toolbar,
+  .criterion-header {
     align-items: stretch;
     flex-direction: column;
   }
@@ -387,5 +448,9 @@ textarea:focus {
 
   .date-range {
     white-space: normal;
+  }
+
+  .submit-button {
+    width: 100%;
   }
 }

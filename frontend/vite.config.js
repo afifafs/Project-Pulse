@@ -7,6 +7,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/sections': 'http://localhost:8080',
+      '/rubrics': 'http://localhost:8080',
     },
   },
 })

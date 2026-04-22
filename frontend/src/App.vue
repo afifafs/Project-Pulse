@@ -1,5 +1,5 @@
 <script setup>
-import SectionDirectory from './views/SectionDirectory.vue'
+import RubricCreateView from './views/RubricCreateView.vue'
 </script>
 
 <template>
@@ -7,13 +7,13 @@ import SectionDirectory from './views/SectionDirectory.vue'
     <header class="app-header">
       <div>
         <p class="eyebrow">Project Pulse</p>
-        <h1>Course sections</h1>
+        <h1>Create rubric</h1>
       </div>
       <p class="header-copy">
-        Search sections and review rosters, teams, instructors, and rubric details.
+        Build a rubric with multiple scoring criteria and send it to the backend.
       </p>
     </header>
 
-    <SectionDirectory />
+    <RubricCreateView />
   </main>
 </template>
