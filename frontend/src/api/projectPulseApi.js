@@ -44,6 +44,10 @@ export function getTeams(sectionId = '') {
   return request('/teams')
 }
 
+export function getTeamDetails(id) {
+  return request(`/teams/${id}`)
+}
+
 export function createSection(payload) {
   return request('/sections', {
     method: 'POST',

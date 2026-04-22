@@ -1,5 +1,5 @@
 <script setup>
-import SeniorDesignTeamsView from './views/SeniorDesignTeamsView.vue'
+import SeniorDesignTeamView from './views/SeniorDesignTeamView.vue'
 </script>
 
 <template>
@@ -7,13 +7,13 @@ import SeniorDesignTeamsView from './views/SeniorDesignTeamsView.vue'
     <header class="app-header">
       <div>
         <p class="eyebrow">Project Pulse</p>
-        <h1>Senior design teams</h1>
+        <h1>View senior design team</h1>
       </div>
       <p class="header-copy">
-        Find teams and optionally filter by senior design section.
+        Load a team, review its members, and see the associated section.
       </p>
     </header>
 
-    <SeniorDesignTeamsView />
+    <SeniorDesignTeamView />
   </main>
 </template>

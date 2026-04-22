@@ -275,6 +275,26 @@ select:focus {
   margin-top: 18px;
 }
 
+.team-detail-card {
+  display: grid;
+  gap: 16px;
+  margin-top: 18px;
+}
+
+.associated-section {
+  display: grid;
+  gap: 4px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+  padding: 14px;
+}
+
+.associated-section span,
+.associated-section small {
+  color: var(--muted);
+}
+
 .section-summary {
   display: flex;
   align-items: center;
