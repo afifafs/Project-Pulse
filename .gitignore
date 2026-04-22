@@ -1,0 +1,89 @@
+# macOS
+.DS_Store
+
+# IntelliJ
+.idea/
+*.iml
+
+# Java build
+target/
+
+# Node
+node_modules/
+dist/
+
+.DS_Store
+.idea/
+.vscode/*
+
+backend/HELP.md
+backend/target/
+!backend/.mvn/wrapper/maven-wrapper.jar
+!backend/**/src/main/**/target/
+!backend/**/src/test/**/target/
+
+### IntelliJ IDEA ###
+backend/.idea/
+backend/*.iws
+backend/*.iml
+backend/*.ipr
+
+### VS Code ###
+# Logs
+frontend/logs
+frontend/*.log
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+frontend/pnpm-debug.log*
+frontend/lerna-debug.log*
+
+# Node modules
+frontend/node_modules
+
+# Build output
+frontend/dist
+frontend/dist-ssr
+
+# Test coverage
+frontend/coverage
+
+# Local environment files
+frontend/*.local
+
+# Cypress directories
+frontend/cypress/videos/
+frontend/cypress/screenshots/
+
+# Editor directories and files
+frontend/.vscode/*
+!frontend/.vscode/extensions.json
+frontend/.idea
+frontend/*.suo
+frontend/*.ntvs*
+frontend/*.njsproj
+frontend/*.sln
+frontend/*.sw?
+
+# TypeScript build info
+frontend/*.tsbuildinfo
+
+### Docker / Grafana ###
+# Ignore all Grafana runtime data and local state
+docker/grafana/*
+
+# Keep only reproducible configuration and provisioning files
+!docker/grafana/provisioning/**
+!docker/grafana/Dockerfile
+!docker/grafana/docker-compose.yml
+!docker/grafana/*.ini
+!docker/grafana/*.env.example
+!docker/grafana/grafana-config.env
+
+### Docker / Prometheus ###
+# Ignore all Prometheus runtime data
+docker/prometheus/*
+
+# Keep only the main configuration file
+!docker/prometheus/prometheus.yml
+
