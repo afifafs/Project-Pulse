@@ -11,8 +11,8 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 @Entity
-@Table(name = "students")
-public class Student {
+@Table(name = "instructors")
+public class Instructor {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -30,18 +30,11 @@ public class Student {
 
     private String password;
 
-    private Boolean active = Boolean.FALSE;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "team_id")
-    private Team team;
+    private Boolean active = Boolean.TRUE;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "section_id")
     private Section section;
-
-    public Student() {
-    }
 
     public Long getId() {
         return id;
@@ -97,14 +90,6 @@ public class Student {
 
     public void setActive(Boolean active) {
         this.active = active;
-    }
-
-    public Team getTeam() {
-        return team;
-    }
-
-    public void setTeam(Team team) {
-        this.team = team;
     }
 
     public Section getSection() {
