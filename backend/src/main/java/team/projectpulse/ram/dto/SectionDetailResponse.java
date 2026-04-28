@@ -23,6 +23,8 @@ public class SectionDetailResponse {
 
     private RubricDetailResponse rubric;
 
+    private List<SectionWeekResponse> weeks;
+
     public SectionDetailResponse(
             Long id,
             String name,
@@ -32,7 +34,8 @@ public class SectionDetailResponse {
             List<TeamDetailResponse> teams,
             List<StudentResponse> studentsNotAssignedToTeams,
             List<String> instructors,
-            RubricDetailResponse rubric
+            RubricDetailResponse rubric,
+            List<SectionWeekResponse> weeks
     ) {
         this.id = id;
         this.name = name;
@@ -43,6 +46,7 @@ public class SectionDetailResponse {
         this.studentsNotAssignedToTeams = studentsNotAssignedToTeams;
         this.instructors = instructors;
         this.rubric = rubric;
+        this.weeks = weeks;
     }
 
     public Long getId() {
@@ -79,5 +83,9 @@ public class SectionDetailResponse {
 
     public RubricDetailResponse getRubric() {
         return rubric;
+    }
+
+    public List<SectionWeekResponse> getWeeks() {
+        return weeks;
     }
 }

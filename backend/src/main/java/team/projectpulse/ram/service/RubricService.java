@@ -44,7 +44,9 @@ public class RubricService {
     }
 
     public List<Rubric> getAllRubrics() {
-        return List.of();
+        return rubricRepository.findAll().stream()
+                .sorted(java.util.Comparator.comparing(Rubric::getName, String.CASE_INSENSITIVE_ORDER))
+                .toList();
     }
 
     public Rubric updateRubric(Long id, Rubric rubric) {

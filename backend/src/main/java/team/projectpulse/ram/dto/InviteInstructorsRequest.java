@@ -4,18 +4,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class InviteStudentsRequest {
+public class InviteInstructorsRequest {
 
-    private Long sectionId;
     private List<String> emails = new ArrayList<>();
-
-    public Long getSectionId() {
-        return sectionId;
-    }
-
-    public void setSectionId(Long sectionId) {
-        this.sectionId = sectionId;
-    }
 
     public List<String> getEmails() {
         return emails;

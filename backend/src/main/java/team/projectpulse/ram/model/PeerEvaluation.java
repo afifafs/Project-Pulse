@@ -26,6 +26,8 @@ public class PeerEvaluation {
 
     private String publicComment;
 
+    private String privateComment;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "section_id")
     private Section section;
@@ -66,6 +68,14 @@ public class PeerEvaluation {
 
     public void setPublicComment(String publicComment) {
         this.publicComment = publicComment;
+    }
+
+    public String getPrivateComment() {
+        return privateComment;
+    }
+
+    public void setPrivateComment(String privateComment) {
+        this.privateComment = privateComment;
     }
 
     public Section getSection() {

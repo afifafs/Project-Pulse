@@ -1,42 +1,42 @@
 package team.projectpulse.ram.dto;
 
-import team.projectpulse.ram.model.Student;
-
-public class StudentResponse {
+public class StudentDetailResponse {
 
     private Long id;
-
     private String firstName;
-
     private String lastName;
-
     private String email;
-
+    private boolean active;
     private String sectionName;
-
     private String teamName;
 
-    private boolean active;
-
-    public StudentResponse(Long id, String firstName, String lastName, String email, String sectionName, String teamName, boolean active) {
+    public StudentDetailResponse(
+            Long id,
+            String firstName,
+            String lastName,
+            String email,
+            boolean active,
+            String sectionName,
+            String teamName
+    ) {
         this.id = id;
         this.firstName = firstName;
         this.lastName = lastName;
         this.email = email;
+        this.active = active;
         this.sectionName = sectionName;
         this.teamName = teamName;
-        this.active = active;
     }
 
-    public static StudentResponse fromEntity(Student student) {
-        return new StudentResponse(
+    public static StudentDetailResponse fromEntity(team.projectpulse.ram.model.Student student) {
+        return new StudentDetailResponse(
                 student.getId(),
                 student.getFirstName(),
                 student.getLastName(),
                 student.getEmail(),
+                student.isActive(),
                 student.getSection() == null ? null : student.getSection().getName(),
-                student.getTeam() == null ? null : student.getTeam().getName(),
-                student.isActive()
+                student.getTeam() == null ? null : student.getTeam().getName()
         );
     }
 
@@ -56,15 +56,15 @@ public class StudentResponse {
         return email;
     }
 
+    public boolean isActive() {
+        return active;
+    }
+
     public String getSectionName() {
         return sectionName;
     }
 
     public String getTeamName() {
         return teamName;
-    }
-
-    public boolean isActive() {
-        return active;
     }
 }

@@ -1,12 +1,11 @@
 package team.projectpulse.ram;
 
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
+public final class PeerEvaluationSystemApplication {
 
-@SpringBootApplication
-public class PeerEvaluationSystemApplication {
+    private PeerEvaluationSystemApplication() {
+    }
 
     public static void main(String[] args) {
-        SpringApplication.run(PeerEvaluationSystemApplication.class, args);
+        team.projectpulse.ProjectPulseApplication.main(args);
     }
 }

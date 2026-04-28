@@ -49,4 +49,12 @@ public class ActivityController {
     ) {
         return ResponseEntity.ok(activityService.getSectionActivities(sectionId, weekStart));
     }
+
+    @GetMapping("/teams/{teamId}/activities")
+    public ResponseEntity<TeamActivitiesResponse> getTeamActivities(
+            @PathVariable Long teamId,
+            @RequestParam LocalDate weekStart
+    ) {
+        return ResponseEntity.ok(activityService.getTeamActivities(teamId, weekStart));
+    }
 }

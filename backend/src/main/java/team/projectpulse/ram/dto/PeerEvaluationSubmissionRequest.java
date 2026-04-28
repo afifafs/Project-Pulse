@@ -7,6 +7,7 @@ public class PeerEvaluationSubmissionRequest {
 
     private Long revieweeId;
     private String publicComment;
+    private String privateComment;
     private List<PeerEvaluationScoreRequest> scores = new ArrayList<>();
 
     public Long getRevieweeId() {
@@ -23,6 +24,14 @@ public class PeerEvaluationSubmissionRequest {
 
     public void setPublicComment(String publicComment) {
         this.publicComment = publicComment;
+    }
+
+    public String getPrivateComment() {
+        return privateComment;
+    }
+
+    public void setPrivateComment(String privateComment) {
+        this.privateComment = privateComment;
     }
 
     public List<PeerEvaluationScoreRequest> getScores() {

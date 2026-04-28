@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import team.projectpulse.ram.dto.EvaluationHistoryResponse;
 import team.projectpulse.ram.dto.PeerEvaluationBatchRequest;
+import team.projectpulse.ram.dto.SectionEvaluationReportResponse;
+import team.projectpulse.ram.dto.StudentEvaluationReportResponse;
 import team.projectpulse.ram.service.EvaluationService;
 
 @RestController
@@ -43,5 +45,23 @@ public class EvaluationController {
     ) {
         int savedCount = evaluationService.savePeerEvaluations(studentId, sectionId, weekStart, request);
         return ResponseEntity.ok(Map.of("savedCount", savedCount));
+    }
+
+    @GetMapping("/report")
+    public ResponseEntity<StudentEvaluationReportResponse> getStudentEvaluationReport(
+            @PathVariable Long studentId,
+            @RequestParam Long sectionId,
+            @RequestParam LocalDate startWeek,
+            @RequestParam LocalDate endWeek
+    ) {
+        return ResponseEntity.ok(evaluationService.getStudentEvaluationReport(studentId, sectionId, startWeek, endWeek));
+    }
+
+    @GetMapping("/sections/{sectionId}/report")
+    public ResponseEntity<SectionEvaluationReportResponse> getSectionEvaluationReport(
+            @PathVariable Long sectionId,
+            @RequestParam LocalDate weekStart
+    ) {
+        return ResponseEntity.ok(evaluationService.getSectionEvaluationReport(sectionId, weekStart));
     }
 }

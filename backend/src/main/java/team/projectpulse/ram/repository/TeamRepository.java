@@ -31,4 +31,19 @@ public interface TeamRepository extends JpaRepository<Team, Long> {
     boolean existsByNameIgnoreCase(String name);
 
     boolean existsByNameIgnoreCaseAndIdNot(String name, Long id);
+
+    @Query("""
+            select distinct team
+            from Team team
+            left join fetch team.section section
+            left join fetch team.students students
+            left join fetch team.instructors instructors
+            where (:sectionName is null or lower(section.name) like lower(concat('%', :sectionName, '%')))
+              and (:teamName is null or lower(team.name) like lower(concat('%', :teamName, '%')))
+            order by section.name desc, team.name asc
+            """)
+    List<Team> search(
+            @Param("sectionName") String sectionName,
+            @Param("teamName") String teamName
+    );
 }

@@ -43,4 +43,20 @@ public interface PeerEvaluationRepository extends JpaRepository<PeerEvaluation, 
             @Param("sectionId") Long sectionId,
             @Param("weekStart") LocalDate weekStart
     );
+
+    @Query("""
+            select distinct evaluation
+            from PeerEvaluation evaluation
+            left join fetch evaluation.reviewee reviewee
+            left join fetch evaluation.reviewer reviewer
+            left join fetch evaluation.scores scores
+            left join fetch scores.criterion criterion
+            where evaluation.section.id = :sectionId
+              and evaluation.weekStart = :weekStart
+            order by reviewee.lastName asc, reviewee.firstName asc
+            """)
+    List<PeerEvaluation> findAllBySectionAndWeek(
+            @Param("sectionId") Long sectionId,
+            @Param("weekStart") LocalDate weekStart
+    );
 }

@@ -2,19 +2,23 @@ package team.projectpulse.ram.service;
 
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import team.projectpulse.ram.dto.AccountSetupRequest;
 import team.projectpulse.ram.dto.ProfileResponse;
 import team.projectpulse.ram.dto.ProfileUpdateRequest;
 import team.projectpulse.ram.dto.ResetPasswordRequest;
+import team.projectpulse.ram.dto.StudentDetailResponse;
+import team.projectpulse.ram.dto.InviteStudentsRequest;
 import team.projectpulse.ram.exception.InvalidStudentRequestException;
 import team.projectpulse.ram.exception.ResourceNotFoundException;
+import team.projectpulse.ram.model.Section;
 import team.projectpulse.ram.model.Student;
+import team.projectpulse.ram.repository.SectionRepository;
 import team.projectpulse.ram.repository.StudentRepository;
 
 @Service
@@ -24,13 +28,11 @@ public class StudentService {
     private static final Pattern EMAIL_PATTERN = Pattern.compile("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
 
     private final StudentRepository studentRepository;
+    private final SectionRepository sectionRepository;
 
-    public StudentService(StudentRepository studentRepository) {
+    public StudentService(StudentRepository studentRepository, SectionRepository sectionRepository) {
         this.studentRepository = studentRepository;
-    }
-
-    public Student createStudent(Student student) {
-        return null;
+        this.sectionRepository = sectionRepository;
     }
 
     @Transactional(readOnly = true)
@@ -84,8 +86,16 @@ public class StudentService {
     }
 
     @Transactional
-    public int inviteStudents(List<String> rawEmails) {
-        Set<String> emails = normalizeEmails(rawEmails);
+    public int inviteStudents(InviteStudentsRequest request) {
+        if (request == null) {
+            throw new InvalidStudentRequestException("Invite request is required.");
+        }
+        Set<String> emails = normalizeEmails(request.getEmails());
+        Section section = null;
+        if (request.getSectionId() != null) {
+            section = sectionRepository.findById(request.getSectionId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Section not found with id: " + request.getSectionId()));
+        }
 
         for (String email : emails) {
             Student student = studentRepository.findByEmailIgnoreCase(email)
@@ -98,25 +108,51 @@ public class StudentService {
                         return studentRepository.save(created);
                     });
 
+            if (section != null) {
+                student.setSection(section);
+                studentRepository.save(student);
+            }
             LOGGER.info("Simulated invitation email sent to {}", student.getEmail());
         }
 
         return emails.size();
     }
 
-    public Optional<Student> getStudentById(Long id) {
-        return Optional.empty();
+    @Transactional(readOnly = true)
+    public List<StudentDetailResponse> findStudents(String name, String email, String sectionName, String teamName) {
+        return studentRepository.search(normalizeFilter(name), normalizeFilter(email), normalizeFilter(sectionName), normalizeFilter(teamName))
+                .stream()
+                .map(StudentDetailResponse::fromEntity)
+                .toList();
     }
 
-    public List<Student> getAllStudents() {
-        return List.of();
+    @Transactional(readOnly = true)
+    public StudentDetailResponse getStudentById(Long id) {
+        Student student = studentRepository.findByIdWithDetails(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Student not found with id: " + id));
+        return StudentDetailResponse.fromEntity(student);
     }
 
-    public Student updateStudent(Long id, Student student) {
-        return null;
+    @Transactional
+    public ProfileResponse setupStudentAccount(Long studentId, AccountSetupRequest request) {
+        validateAccountSetup(request);
+
+        Student student = studentRepository.findById(studentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Student not found with id: " + studentId));
+
+        student.setFirstName(request.getFirstName().trim());
+        student.setLastName(request.getLastName().trim());
+        student.setPassword(request.getPassword().trim());
+        student.setActive(true);
+
+        return ProfileResponse.fromEntity(studentRepository.save(student));
     }
 
+    @Transactional
     public void deleteStudent(Long id) {
+        Student student = studentRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Student not found with id: " + id));
+        studentRepository.delete(student);
     }
 
     private void validateProfileRequest(ProfileUpdateRequest request) {
@@ -161,5 +197,35 @@ public class StudentService {
         }
 
         return emails;
+    }
+
+    private void validateAccountSetup(AccountSetupRequest request) {
+        if (request == null) {
+            throw new InvalidStudentRequestException("Account setup request is required.");
+        }
+
+        if (request.getFirstName() == null || request.getFirstName().trim().isEmpty()) {
+            throw new InvalidStudentRequestException("First name is required.");
+        }
+
+        if (request.getLastName() == null || request.getLastName().trim().isEmpty()) {
+            throw new InvalidStudentRequestException("Last name is required.");
+        }
+
+        if (request.getPassword() == null || request.getConfirmPassword() == null) {
+            throw new InvalidStudentRequestException("Both password fields are required.");
+        }
+
+        if (!request.getPassword().equals(request.getConfirmPassword())) {
+            throw new InvalidStudentRequestException("Passwords do not match.");
+        }
+
+        if (request.getPassword().trim().length() < 8) {
+            throw new InvalidStudentRequestException("Password must be at least 8 characters.");
+        }
+    }
+
+    private String normalizeFilter(String value) {
+        return value == null || value.trim().isEmpty() ? null : value.trim();
     }
 }

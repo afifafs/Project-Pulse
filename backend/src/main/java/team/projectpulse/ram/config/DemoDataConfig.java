@@ -1,12 +1,14 @@
 package team.projectpulse.ram.config;
 
 import java.time.LocalDate;
+import java.util.LinkedHashSet;
 import java.util.List;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import team.projectpulse.ram.model.ActivityEntry;
 import team.projectpulse.ram.model.Criterion;
+import team.projectpulse.ram.model.Instructor;
 import team.projectpulse.ram.model.PeerEvaluation;
 import team.projectpulse.ram.model.PeerEvaluationScore;
 import team.projectpulse.ram.model.Rubric;
@@ -14,6 +16,7 @@ import team.projectpulse.ram.model.Section;
 import team.projectpulse.ram.model.Student;
 import team.projectpulse.ram.model.Team;
 import team.projectpulse.ram.repository.ActivityEntryRepository;
+import team.projectpulse.ram.repository.InstructorRepository;
 import team.projectpulse.ram.repository.PeerEvaluationRepository;
 import team.projectpulse.ram.repository.RubricRepository;
 import team.projectpulse.ram.repository.SectionRepository;
@@ -25,6 +28,7 @@ public class DemoDataConfig {
     CommandLineRunner seedDemoData(
             SectionRepository sectionRepository,
             RubricRepository rubricRepository,
+            InstructorRepository instructorRepository,
             ActivityEntryRepository activityEntryRepository,
             PeerEvaluationRepository peerEvaluationRepository
     ) {
@@ -61,11 +65,16 @@ public class DemoDataConfig {
             uxSection.setCourseCode("DSGN-410");
             uxSection.setStartDate(LocalDate.of(2026, 1, 12));
             uxSection.setEndDate(LocalDate.of(2026, 5, 8));
-            uxSection.setInstructors(List.of("Dr. Maya Chen", "Prof. Jonah Ellis"));
             uxSection.setRubric(sprintRubric);
+
+            Instructor maya = instructorRepository.save(instructor("Dr.", "Maya Chen", "maya.chen@example.edu"));
+            Instructor jonah = instructorRepository.save(instructor("Prof.", "Jonah Ellis", "jonah.ellis@example.edu"));
+            uxSection.setInstructors(new LinkedHashSet<>(List.of(maya, jonah)));
 
             Team northStar = team("North Star", "Accessibility-first research squad.", "https://northstar.example.edu", uxSection);
             Team signalLab = team("Signal Lab", "Prototype and validation team.", "https://signallab.example.edu", uxSection);
+            northStar.setInstructors(new LinkedHashSet<>(List.of(maya)));
+            signalLab.setInstructors(new LinkedHashSet<>(List.of(jonah)));
 
             Student anika = student("Anika", "Patel", "anika.patel@example.edu", uxSection, northStar);
             Student drew = student("Drew", "Morales", "drew.morales@example.edu", uxSection, northStar);
@@ -83,11 +92,14 @@ public class DemoDataConfig {
             capstoneSection.setCourseCode("CS-498");
             capstoneSection.setStartDate(LocalDate.of(2026, 1, 12));
             capstoneSection.setEndDate(LocalDate.of(2026, 5, 8));
-            capstoneSection.setInstructors(List.of("Prof. Elena Brooks"));
             capstoneSection.setRubric(capstoneRubric);
+
+            Instructor elena = instructorRepository.save(instructor("Prof.", "Elena Brooks", "elena.brooks@example.edu"));
+            capstoneSection.setInstructors(new LinkedHashSet<>(List.of(elena)));
 
             Team aurora = team("Aurora", "Platform and release engineering team.", "https://aurora.example.edu", capstoneSection);
             Team relay = team("Relay", "Workflow automation team.", "https://relay.example.edu", capstoneSection);
+            aurora.setInstructors(new LinkedHashSet<>(List.of(elena)));
 
             Student sara = student("Sara", "Kim", "sara.kim@example.edu", capstoneSection, aurora);
             Student noah = student("Noah", "Reed", "noah.reed@example.edu", capstoneSection, aurora);
@@ -185,6 +197,16 @@ public class DemoDataConfig {
         student.setSection(section);
         student.setTeam(team);
         return student;
+    }
+
+    private Instructor instructor(String firstName, String lastName, String email) {
+        Instructor instructor = new Instructor();
+        instructor.setFirstName(firstName);
+        instructor.setLastName(lastName);
+        instructor.setEmail(email);
+        instructor.setPassword("instructor123");
+        instructor.setActive(true);
+        return instructor;
     }
 
     private ActivityEntry activity(

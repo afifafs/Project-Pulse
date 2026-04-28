@@ -1,7 +1,6 @@
 package team.projectpulse.ram.model;
 
 import jakarta.persistence.CascadeType;
-import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -10,10 +9,14 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.JoinTable;
 import jakarta.persistence.Table;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "sections")
@@ -31,9 +34,6 @@ public class Section {
 
     private LocalDate endDate;
 
-    @ElementCollection
-    private List<String> instructors = new ArrayList<>();
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "rubric_id")
     private Rubric rubric;
@@ -43,6 +43,17 @@ public class Section {
 
     @OneToMany(mappedBy = "section", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<Student> students = new ArrayList<>();
+
+    @ManyToMany
+    @JoinTable(
+            name = "section_instructors",
+            joinColumns = @JoinColumn(name = "section_id"),
+            inverseJoinColumns = @JoinColumn(name = "instructor_id")
+    )
+    private Set<Instructor> instructors = new LinkedHashSet<>();
+
+    @OneToMany(mappedBy = "section", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private List<SectionWeek> weeks = new ArrayList<>();
 
     public Section() {
     }
@@ -87,11 +98,11 @@ public class Section {
         this.endDate = endDate;
     }
 
-    public List<String> getInstructors() {
+    public Set<Instructor> getInstructors() {
         return instructors;
     }
 
-    public void setInstructors(List<String> instructors) {
+    public void setInstructors(Set<Instructor> instructors) {
         this.instructors = instructors;
     }
 
@@ -117,5 +128,18 @@ public class Section {
 
     public void setStudents(List<Student> students) {
         this.students = students;
+    }
+
+    public List<SectionWeek> getWeeks() {
+        return weeks;
+    }
+
+    public void setWeeks(List<SectionWeek> weeks) {
+        this.weeks = weeks;
+    }
+
+    public void addWeek(SectionWeek week) {
+        weeks.add(week);
+        week.setSection(this);
     }
 }

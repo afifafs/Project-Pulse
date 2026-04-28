@@ -17,9 +17,11 @@ import team.projectpulse.ram.exception.ResourceNotFoundException;
 import team.projectpulse.ram.model.ActivityEntry;
 import team.projectpulse.ram.model.Section;
 import team.projectpulse.ram.model.Student;
+import team.projectpulse.ram.model.Team;
 import team.projectpulse.ram.repository.ActivityEntryRepository;
 import team.projectpulse.ram.repository.SectionRepository;
 import team.projectpulse.ram.repository.StudentRepository;
+import team.projectpulse.ram.repository.TeamRepository;
 
 @Service
 public class ActivityService {
@@ -27,15 +29,18 @@ public class ActivityService {
     private final ActivityEntryRepository activityEntryRepository;
     private final StudentRepository studentRepository;
     private final SectionRepository sectionRepository;
+    private final TeamRepository teamRepository;
 
     public ActivityService(
             ActivityEntryRepository activityEntryRepository,
             StudentRepository studentRepository,
-            SectionRepository sectionRepository
+            SectionRepository sectionRepository,
+            TeamRepository teamRepository
     ) {
         this.activityEntryRepository = activityEntryRepository;
         this.studentRepository = studentRepository;
         this.sectionRepository = sectionRepository;
+        this.teamRepository = teamRepository;
     }
 
     @Transactional(readOnly = true)
@@ -106,6 +111,36 @@ public class ActivityService {
         }
 
         List<TeamActivitiesGroupResponse> groups = students.stream()
+                .map(student -> new TeamActivitiesGroupResponse(
+                        student.getId(),
+                        student.getFirstName() + " " + student.getLastName(),
+                        rowsByStudent.getOrDefault(student.getId(), List.of())
+                ))
+                .toList();
+
+        return new TeamActivitiesResponse(normalizedWeekStart, normalizedWeekStart.plusDays(6), groups);
+    }
+
+    @Transactional(readOnly = true)
+    public TeamActivitiesResponse getTeamActivities(Long teamId, LocalDate weekStart) {
+        Team team = teamRepository.findByIdWithDetails(teamId)
+                .orElseThrow(() -> new ResourceNotFoundException("Team not found with id: " + teamId));
+        if (team.getSection() == null) {
+            throw new InvalidStudentRequestException("Team must belong to a section.");
+        }
+        LocalDate normalizedWeekStart = validateWeekInSection(team.getSection(), weekStart);
+
+        Map<Long, List<ActivityEntryResponse>> rowsByStudent = new LinkedHashMap<>();
+        for (Student student : team.getStudents()) {
+            List<ActivityEntryResponse> rows = activityEntryRepository
+                    .findAllByStudentIdAndWeekStartOrderByIdAsc(student.getId(), normalizedWeekStart)
+                    .stream()
+                    .map(ActivityEntryResponse::fromEntity)
+                    .toList();
+            rowsByStudent.put(student.getId(), rows);
+        }
+
+        List<TeamActivitiesGroupResponse> groups = team.getStudents().stream()
                 .map(student -> new TeamActivitiesGroupResponse(
                         student.getId(),
                         student.getFirstName() + " " + student.getLastName(),

@@ -14,6 +14,10 @@ import team.projectpulse.ram.dto.EvaluationWeekSummaryResponse;
 import team.projectpulse.ram.dto.PeerEvaluationBatchRequest;
 import team.projectpulse.ram.dto.PeerEvaluationScoreRequest;
 import team.projectpulse.ram.dto.PeerEvaluationSubmissionRequest;
+import team.projectpulse.ram.dto.SectionEvaluationReportResponse;
+import team.projectpulse.ram.dto.SectionEvaluationStudentSummaryResponse;
+import team.projectpulse.ram.dto.StudentEvaluationReportResponse;
+import team.projectpulse.ram.dto.StudentEvaluationWeekDetailResponse;
 import team.projectpulse.ram.exception.InvalidStudentRequestException;
 import team.projectpulse.ram.exception.ResourceNotFoundException;
 import team.projectpulse.ram.model.Criterion;
@@ -120,6 +124,7 @@ public class EvaluationService {
             evaluation.setReviewer(reviewer);
             evaluation.setReviewee(reviewee);
             evaluation.setPublicComment(Optional.ofNullable(submission.getPublicComment()).orElse("").trim());
+            evaluation.setPrivateComment(Optional.ofNullable(submission.getPrivateComment()).orElse("").trim());
             evaluation.getScores().clear();
 
             if (submission.getScores().size() != criteria.size()) {
@@ -149,6 +154,49 @@ public class EvaluationService {
         return request.getSubmissions().size();
     }
 
+    @Transactional(readOnly = true)
+    public SectionEvaluationReportResponse getSectionEvaluationReport(Long sectionId, LocalDate weekStart) {
+        Section section = sectionRepository.findById(sectionId)
+                .orElseThrow(() -> new ResourceNotFoundException("Section not found with id: " + sectionId));
+        validateWeekRange(section, weekStart, weekStart);
+
+        List<Criterion> criteria = rubricCriteria(section.getRubric());
+        Map<Long, List<PeerEvaluation>> byReviewee = new LinkedHashMap<>();
+        for (PeerEvaluation evaluation : peerEvaluationRepository.findAllBySectionAndWeek(sectionId, weekStart)) {
+            byReviewee.computeIfAbsent(evaluation.getReviewee().getId(), ignored -> new ArrayList<>()).add(evaluation);
+        }
+
+        List<SectionEvaluationStudentSummaryResponse> rows = byReviewee.values().stream()
+                .map(evaluations -> summarizeStudent(sectionId, criteria, evaluations))
+                .sorted(Comparator.comparing(SectionEvaluationStudentSummaryResponse::getStudentName))
+                .toList();
+
+        return new SectionEvaluationReportResponse(weekStart, weekStart.plusDays(6), rows);
+    }
+
+    @Transactional(readOnly = true)
+    public StudentEvaluationReportResponse getStudentEvaluationReport(Long studentId, Long sectionId, LocalDate startWeek, LocalDate endWeek) {
+        Student student = studentRepository.findByIdWithDetails(studentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Student not found with id: " + studentId));
+        Section section = sectionRepository.findById(sectionId)
+                .orElseThrow(() -> new ResourceNotFoundException("Section not found with id: " + sectionId));
+        validateWeekRange(section, startWeek, endWeek);
+        ensureStudentInSection(student, section);
+
+        List<Criterion> criteria = rubricCriteria(section.getRubric());
+        Map<LocalDate, List<PeerEvaluation>> grouped = new LinkedHashMap<>();
+        for (PeerEvaluation evaluation : peerEvaluationRepository.findAllForRevieweeBetweenWeeks(studentId, sectionId, startWeek, endWeek)) {
+            grouped.computeIfAbsent(evaluation.getWeekStart(), ignored -> new ArrayList<>()).add(evaluation);
+        }
+
+        List<StudentEvaluationWeekDetailResponse> rows = grouped.entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .map(entry -> detailWeek(entry.getKey(), entry.getValue(), criteria))
+                .toList();
+
+        return new StudentEvaluationReportResponse(student.getId(), student.getFirstName() + " " + student.getLastName(), rows);
+    }
+
     private EvaluationWeekSummaryResponse summarizeWeek(
             LocalDate weekStart,
             List<PeerEvaluation> evaluations,
@@ -176,6 +224,46 @@ public class EvaluationService {
                 weekStart.plusDays(6),
                 Math.round(totalAverage * 100.0) / 100.0,
                 criterionScores
+        );
+    }
+
+    private StudentEvaluationWeekDetailResponse detailWeek(
+            LocalDate weekStart,
+            List<PeerEvaluation> evaluations,
+            List<Criterion> criteria
+    ) {
+        EvaluationWeekSummaryResponse summary = summarizeWeek(weekStart, evaluations, criteria);
+        List<String> publicComments = evaluations.stream()
+                .map(PeerEvaluation::getPublicComment)
+                .filter(comment -> comment != null && !comment.isBlank())
+                .toList();
+        List<String> privateComments = evaluations.stream()
+                .map(PeerEvaluation::getPrivateComment)
+                .filter(comment -> comment != null && !comment.isBlank())
+                .toList();
+        return new StudentEvaluationWeekDetailResponse(
+                summary.getWeekStart(),
+                summary.getWeekEnd(),
+                summary.getAverageTotalScore(),
+                summary.getCriterionScores(),
+                publicComments,
+                privateComments
+        );
+    }
+
+    private SectionEvaluationStudentSummaryResponse summarizeStudent(
+            Long sectionId,
+            List<Criterion> criteria,
+            List<PeerEvaluation> evaluations
+    ) {
+        PeerEvaluation first = evaluations.get(0);
+        EvaluationWeekSummaryResponse summary = summarizeWeek(first.getWeekStart(), evaluations, criteria);
+        return new SectionEvaluationStudentSummaryResponse(
+                first.getReviewee().getId(),
+                first.getReviewee().getFirstName() + " " + first.getReviewee().getLastName(),
+                summary.getAverageTotalScore(),
+                summary.getCriterionScores(),
+                evaluations.size()
         );
     }
 
