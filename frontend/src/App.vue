@@ -1,260 +1,134 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
 
+const nav = ref('overview')
+const loading = ref(false)
+const alert = ref({ type: 'info', text: '' })
+
 const sections = ref([])
+const teams = ref([])
+const students = ref([])
+const instructors = ref([])
+const rubrics = ref([])
+
+const sectionDetail = ref(null)
+const teamDetail = ref(null)
+
 const selectedSectionId = ref(null)
-const selectedSection = ref(null)
-const loadingSections = ref(true)
-const loadingDetail = ref(false)
-const sectionsError = ref('')
-const detailError = ref('')
-const activeView = ref('home')
-const collapsedGroups = ref({})
+const selectedTeamId = ref(null)
 
-const selectedWeekIndex = ref(0)
+const sectionFormMode = ref('create')
+const teamFormMode = ref('create')
 
+const rubricForm = ref({
+  name: '',
+  criteria: [
+    { name: 'Quality of work', description: 'How do you rate the quality of this teammate’s work?', maxScore: 10 },
+  ],
+})
+
+const sectionForm = ref({
+  id: null,
+  name: '',
+  courseCode: '',
+  startDate: '',
+  endDate: '',
+  rubricId: null,
+})
+
+const teamForm = ref({
+  id: null,
+  name: '',
+  description: '',
+  website: '',
+  sectionId: null,
+})
+
+const inviteStudentsForm = ref({ sectionId: null, emails: '' })
+const inviteInstructorsForm = ref({ emails: '' })
+
+const inactiveWeeks = ref([])
+const assignedStudentIds = ref([])
+const assignedInstructorIds = ref([])
+
+const workspaceSectionId = ref(null)
+const workspaceStudentId = ref(null)
+const workspaceWeekStart = ref('')
 const profile = ref(null)
-const profileForm = ref({
-  firstName: '',
-  lastName: '',
-  email: '',
-})
-const resetPasswordForm = ref({
-  newPassword: '',
-  confirmPassword: '',
-})
+const profileForm = ref({ firstName: '', lastName: '', email: '' })
+const passwordForm = ref({ newPassword: '', confirmPassword: '' })
+const activitiesRows = ref([])
+const evaluationHistory = ref([])
+const evaluationDrafts = ref([])
 
-const evaluationFilters = ref({
-  startWeek: '',
-  endWeek: '',
-})
-const evaluationRows = ref([])
-const evaluationMessage = ref('')
-const evaluationError = ref('')
-const loadingEvaluations = ref(false)
+const reportSectionId = ref(null)
+const reportTeamId = ref(null)
+const reportStudentId = ref(null)
+const reportWeekStart = ref('')
+const sectionEvaluationReport = ref(null)
+const teamActivityReport = ref(null)
+const studentEvaluationReport = ref(null)
 
-const studentActivities = ref([])
-const studentActivitiesMessage = ref('')
-const studentActivitiesError = ref('')
-const savingActivities = ref(false)
-
-const teamActivityGroups = ref([])
-const teamActivitiesError = ref('')
-const loadingTeamActivities = ref(false)
-
-const submitRows = ref([])
-const submitMessage = ref('')
-const submitError = ref('')
-const submittingEvaluations = ref(false)
-
-const profileMessage = ref('')
-const profileError = ref('')
-const savingProfile = ref(false)
-
-const passwordMessage = ref('')
-const passwordError = ref('')
-const savingPassword = ref(false)
-
-const navGroups = computed(() => [
-  {
-    label: 'Home',
-    items: [{ id: 'home', title: 'Home', icon: '⌂' }],
-  },
-  {
-    label: 'Weekly Activity Reports',
-    items: [
-      { id: 'my-activities', title: 'My Activities', icon: '◫' },
-      { id: 'team-activities', title: "Team's Activities", icon: '▣' },
-    ],
-  },
-  {
-    label: 'Peer Evaluations',
-    items: [
-      { id: 'my-evaluations', title: 'My Evaluations', icon: '◔' },
-      { id: 'submit-evaluations', title: 'Submit Evaluations', icon: '◍' },
-    ],
-  },
-  {
-    label: 'My Profile',
-    items: [
-      { id: 'user-profile', title: 'User Profile', icon: '◌' },
-      { id: 'reset-password', title: 'Reset Password', icon: '✎' },
-    ],
-  },
+const overviewCards = computed(() => [
+  { title: 'Sections', value: sections.value.length, icon: 'mdi-google-classroom' },
+  { title: 'Teams', value: teams.value.length, icon: 'mdi-account-group' },
+  { title: 'Students', value: students.value.length, icon: 'mdi-account-school' },
+  { title: 'Instructors', value: instructors.value.length, icon: 'mdi-teach' },
 ])
 
-const pageMeta = computed(() => {
-  const meta = {
-    home: {
-      group: 'Dashboard',
-      title: 'Project Pulse Overview',
-      panelTitle: 'Overview',
-    },
-    'my-activities': {
-      group: 'Weekly Activity Reports',
-      title: 'My Activities',
-      panelTitle: 'My Weekly Activities',
-    },
-    'team-activities': {
-      group: 'Weekly Activity Reports',
-      title: "Team's Activities",
-      panelTitle: "Team's Weekly Activities",
-    },
-    'my-evaluations': {
-      group: 'Peer Evaluations',
-      title: 'My Evaluations',
-      panelTitle: 'My Peer Evaluations',
-    },
-    'submit-evaluations': {
-      group: 'Peer Evaluations',
-      title: 'Submit Evaluations',
-      panelTitle: 'Submit Peer Evaluations',
-    },
-    'user-profile': {
-      group: 'My Profile',
-      title: 'User Profile',
-      panelTitle: 'User Profile',
-    },
-    'reset-password': {
-      group: 'My Profile',
-      title: 'Reset Password',
-      panelTitle: 'Reset Password',
-    },
+const selectedSection = computed(() => sections.value.find((item) => item.id === selectedSectionId.value) ?? null)
+const workspaceSectionDetail = computed(() => {
+  if (sectionDetail.value?.id === workspaceSectionId.value) {
+    return sectionDetail.value
   }
-
-  return meta[activeView.value]
+  return null
 })
 
-const criterionColumns = computed(() => selectedSection.value?.rubric?.criteria ?? [])
+const workspaceWeeks = computed(() => workspaceSectionDetail.value?.weeks ?? [])
+const workspaceStudents = computed(() => students.value.filter((student) => student.sectionName === selectedWorkspaceSectionName.value))
+const selectedWorkspaceSectionName = computed(() => {
+  const section = sections.value.find((item) => item.id === workspaceSectionId.value)
+  return section?.name ?? null
+})
 
-const rosterStudents = computed(() => {
-  if (!selectedSection.value) {
+const evaluationCriteria = computed(() => workspaceSectionDetail.value?.rubric?.criteria ?? [])
+
+const currentStudentTeamMembers = computed(() => {
+  if (!workspaceSectionDetail.value || !workspaceStudentId.value) {
     return []
   }
-
-  const assigned = selectedSection.value.teams.flatMap((team) =>
-    team.students.map((student) => ({ ...student, teamName: team.name })),
-  )
-
-  const unassigned = selectedSection.value.studentsNotAssignedToTeams.map((student) => ({
-    ...student,
-    teamName: 'Unassigned',
-  }))
-
-  return [...assigned, ...unassigned]
-})
-
-const currentStudent = computed(() => rosterStudents.value[0] ?? null)
-
-const currentUser = computed(() => {
-  if (profile.value) {
-    return profile.value
-  }
-
-  if (!currentStudent.value) {
-    return null
-  }
-
-  return {
-    id: currentStudent.value.id,
-    username: currentStudent.value.email,
-    firstName: currentStudent.value.firstName,
-    lastName: currentStudent.value.lastName,
-    email: currentStudent.value.email,
-    status: 'Enabled',
-    role: 'student',
-  }
-})
-
-const selectedSectionSummary = computed(() => {
-  if (!selectedSection.value) {
-    return null
-  }
-
-  const totalStudents = rosterStudents.value.length
-  const teamCount = selectedSection.value.teams.length
-
-  return {
-    totalStudents,
-    teamCount,
-    evaluationCount: evaluationRows.value.length,
-    rubricName: selectedSection.value.rubric?.name ?? 'No rubric',
-  }
-})
-
-const weekOptions = computed(() => buildWeekOptions(selectedSection.value))
-
-const currentWeek = computed(() => weekOptions.value[selectedWeekIndex.value] ?? null)
-const previousWeekDisabled = computed(() => selectedWeekIndex.value === 0)
-const nextWeekDisabled = computed(() => selectedWeekIndex.value >= weekOptions.value.length - 1)
-
-const submitWeekLabel = computed(() => (currentWeek.value ? currentWeek.value.range : 'No week selected'))
-
-function buildWeekOptions(section) {
-  if (!section?.startDate || !section?.endDate) {
+  const allTeams = workspaceSectionDetail.value.teams ?? []
+  const currentTeam = allTeams.find((team) => team.students.some((student) => student.id === workspaceStudentId.value))
+  if (!currentTeam) {
     return []
   }
+  return currentTeam.students.filter((student) => student.id !== workspaceStudentId.value)
+})
 
-  const options = []
-  let cursor = new Date(`${section.startDate}T00:00:00`)
-  const endDate = new Date(`${section.endDate}T00:00:00`)
-  let weekNumber = 1
+const sectionItems = computed(() => sections.value.map((section) => ({ title: section.name, value: section.id })))
+const rubricItems = computed(() => rubrics.value.map((rubric) => ({ title: rubric.name, value: rubric.id })))
+const teamItems = computed(() => teams.value.map((team) => ({ title: `${team.sectionName ?? 'No Section'} · ${team.name}`, value: team.id })))
+const studentItems = computed(() =>
+  students.value.map((student) => ({
+    title: `${student.firstName} ${student.lastName} (${student.sectionName ?? 'No Section'})`,
+    value: student.id,
+  })),
+)
+const instructorItems = computed(() =>
+  instructors.value.map((instructor) => ({
+    title: `${instructor.firstName ?? ''} ${instructor.lastName ?? ''}`.trim() || instructor.email,
+    value: instructor.id,
+  })),
+)
 
-  while (cursor <= endDate) {
-    const start = new Date(cursor)
-    const end = new Date(cursor)
-    end.setDate(end.getDate() + 6)
-    if (end > endDate) {
-      end.setTime(endDate.getTime())
-    }
-
-    options.push({
-      index: weekNumber,
-      label: `Week ${weekNumber}, ${start.getFullYear()}`,
-      startDate: toIsoDate(start),
-      endDate: toIsoDate(end),
-      range: `${formatDate(start)} -- ${formatDate(end)}`,
-    })
-
-    cursor.setDate(cursor.getDate() + 7)
-    weekNumber += 1
+const availableStudentsForTeam = computed(() => {
+  if (!teamDetail.value?.sectionName) {
+    return []
   }
-
-  return options
-}
-
-function toIsoDate(date) {
-  return date.toISOString().slice(0, 10)
-}
-
-function formatDate(date) {
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  return `${month}-${day}-${date.getFullYear()}`
-}
-
-function formatWeekLabel(option) {
-  return option ? `W${option.index}` : ''
-}
-
-function rangeLabelFromDates(startDate, endDate) {
-  return `${formatDate(new Date(`${startDate}T00:00:00`))} -- ${formatDate(new Date(`${endDate}T00:00:00`))}`
-}
-
-function findWeekIndexForDate(dateIso) {
-  return weekOptions.value.findIndex((option) => option.startDate <= dateIso && option.endDate >= dateIso)
-}
-
-function findWeekOption(dateIso) {
-  return weekOptions.value.find((option) => option.startDate === dateIso) ?? null
-}
-
-function toggleNavGroup(label) {
-  collapsedGroups.value = {
-    ...collapsedGroups.value,
-    [label]: !collapsedGroups.value[label],
-  }
-}
+  return students.value
+    .filter((student) => student.sectionName === teamDetail.value.sectionName)
+    .map((student) => ({ title: `${student.firstName} ${student.lastName}`, value: student.id }))
+})
 
 async function apiFetch(url, options = {}) {
   const response = await fetch(url, {
@@ -266,23 +140,8 @@ async function apiFetch(url, options = {}) {
   })
 
   if (!response.ok) {
-    let message = 'Request failed.'
-
-    try {
-      const payload = await response.json()
-      if (payload?.message) {
-        message = payload.message
-      } else if (typeof payload === 'string') {
-        message = payload
-      }
-    } catch {
-      const text = await response.text()
-      if (text) {
-        message = text
-      }
-    }
-
-    throw new Error(message)
+    const text = await response.text()
+    throw new Error(text || `Request failed: ${response.status}`)
   }
 
   if (response.status === 204) {
@@ -292,847 +151,895 @@ async function apiFetch(url, options = {}) {
   return response.json()
 }
 
-async function fetchSections() {
-  loadingSections.value = true
-  sectionsError.value = ''
-
-  try {
-    const payload = await apiFetch('/sections')
-    sections.value = payload
-
-    if (payload.length > 0) {
-      await selectSection(payload[0].id)
-    }
-  } catch (error) {
-    sectionsError.value = error.message || 'Unable to load sections.'
-  } finally {
-    loadingSections.value = false
-  }
+function pushAlert(type, text) {
+  alert.value = { type, text }
 }
 
-async function selectSection(sectionId) {
-  selectedSectionId.value = sectionId
-  selectedSection.value = null
-  detailError.value = ''
-  loadingDetail.value = true
-
-  try {
-    selectedSection.value = await apiFetch(`/sections/${sectionId}`)
-    initializeWeekState()
-    initializeSubmissionRows()
-    await hydrateCurrentStudentData()
-  } catch (error) {
-    detailError.value = error.message || 'Unable to load section details.'
-  } finally {
-    loadingDetail.value = false
-  }
+function clearAlert() {
+  alert.value = { type: 'info', text: '' }
 }
 
-function initializeWeekState() {
-  const options = weekOptions.value
-  if (options.length === 0) {
-    selectedWeekIndex.value = 0
-    evaluationFilters.value = { startWeek: '', endWeek: '' }
-    return
-  }
-
-  const todayIso = toIsoDate(new Date())
-  const matchingIndex = findWeekIndexForDate(todayIso)
-  selectedWeekIndex.value = matchingIndex >= 0 ? matchingIndex : 0
-
-  evaluationFilters.value = {
-    startWeek: options[0].startDate,
-    endWeek: options[options.length - 1].startDate,
-  }
-}
-
-async function hydrateCurrentStudentData() {
-  if (!currentStudent.value) {
-    profile.value = null
-    return
-  }
-
-  await loadProfile()
-  await Promise.all([loadStudentActivities(), loadTeamActivities(), queryEvaluations()])
-}
-
-async function loadProfile() {
-  profileError.value = ''
-
-  if (!currentStudent.value) {
-    profile.value = null
-    return
-  }
-
-  try {
-    profile.value = await apiFetch(`/students/${currentStudent.value.id}/profile`)
-    profileForm.value = {
-      firstName: profile.value.firstName,
-      lastName: profile.value.lastName,
-      email: profile.value.email,
-    }
-  } catch (error) {
-    profileError.value = error.message || 'Unable to load profile.'
-  }
-}
-
-async function updateProfile() {
-  if (!currentUser.value) {
-    return
-  }
-
-  savingProfile.value = true
-  profileError.value = ''
-  profileMessage.value = ''
-
-  try {
-    profile.value = await apiFetch(`/students/${currentUser.value.id}/profile`, {
-      method: 'PUT',
-      body: JSON.stringify(profileForm.value),
-    })
-    syncProfileIntoSection()
-    profileMessage.value = 'Profile updated.'
-  } catch (error) {
-    profileError.value = error.message || 'Unable to update profile.'
-  } finally {
-    savingProfile.value = false
-  }
-}
-
-function syncProfileIntoSection() {
-  if (!selectedSection.value || !profile.value) {
-    return
-  }
-
-  const applyProfile = (student) => {
-    if (student.id === profile.value.id) {
-      student.firstName = profile.value.firstName
-      student.lastName = profile.value.lastName
-      student.email = profile.value.email
-    }
-  }
-
-  selectedSection.value.teams.forEach((team) => team.students.forEach(applyProfile))
-  selectedSection.value.studentsNotAssignedToTeams.forEach(applyProfile)
-}
-
-async function resetPassword() {
-  if (!currentUser.value) {
-    return
-  }
-
-  savingPassword.value = true
-  passwordError.value = ''
-  passwordMessage.value = ''
-
-  try {
-    await apiFetch(`/students/${currentUser.value.id}/reset-password`, {
-      method: 'POST',
-      body: JSON.stringify(resetPasswordForm.value),
-    })
-    resetPasswordForm.value = { newPassword: '', confirmPassword: '' }
-    passwordMessage.value = 'Password updated.'
-  } catch (error) {
-    passwordError.value = error.message || 'Unable to reset password.'
-  } finally {
-    savingPassword.value = false
-  }
-}
-
-async function loadStudentActivities() {
-  studentActivitiesError.value = ''
-  studentActivitiesMessage.value = ''
-
-  if (!currentUser.value || !currentWeek.value) {
-    studentActivities.value = []
-    return
-  }
-
-  try {
-    const payload = await apiFetch(
-      `/students/${currentUser.value.id}/activities?weekStart=${currentWeek.value.startDate}`,
-    )
-    studentActivities.value = payload.rows.length > 0 ? payload.rows : [blankActivityRow()]
-  } catch (error) {
-    studentActivitiesError.value = error.message || 'Unable to load weekly activities.'
-  }
-}
-
-function blankActivityRow() {
+function blankActivity() {
   return {
-    id: null,
     category: '',
     activity: '',
     description: '',
     plannedHours: 0,
     actualHours: 0,
-    status: 'IN REVIEW',
+    status: '',
   }
 }
 
-function addActivityRow() {
-  studentActivities.value.push(blankActivityRow())
+function addCriterion() {
+  rubricForm.value.criteria.push({ name: '', description: '', maxScore: 10 })
 }
 
-function removeActivityRow(index) {
-  studentActivities.value.splice(index, 1)
-  if (studentActivities.value.length === 0) {
-    studentActivities.value.push(blankActivityRow())
+function removeCriterion(index) {
+  rubricForm.value.criteria.splice(index, 1)
+}
+
+function addActivityRow() {
+  activitiesRows.value.push(blankActivity())
+}
+
+function sectionWeekItems(section) {
+  return (section?.weeks ?? []).map((week) => ({
+    title: `Week ${week.weekNumber}: ${week.weekStart} - ${week.weekEnd}`,
+    value: week.weekStart,
+  }))
+}
+
+function refreshEvaluationDrafts() {
+  evaluationDrafts.value = currentStudentTeamMembers.value.map((student) => ({
+    revieweeId: student.id,
+    revieweeName: `${student.firstName} ${student.lastName}`,
+    publicComment: '',
+    privateComment: '',
+    scores: evaluationCriteria.value.map((criterion) => ({
+      criterionId: criterion.id,
+      score: criterion.maxScore,
+    })),
+  }))
+}
+
+async function loadCatalogs() {
+  loading.value = true
+  try {
+    const [sectionData, teamData, studentData, instructorData, rubricData] = await Promise.all([
+      apiFetch('/sections'),
+      apiFetch('/teams'),
+      apiFetch('/students'),
+      apiFetch('/instructors'),
+      apiFetch('/rubrics'),
+    ])
+
+    sections.value = sectionData
+    teams.value = teamData
+    students.value = studentData
+    instructors.value = instructorData
+    rubrics.value = rubricData
+
+    if (!selectedSectionId.value && sections.value.length) {
+      selectedSectionId.value = sections.value[0].id
+    }
+    if (!workspaceSectionId.value && sections.value.length) {
+      workspaceSectionId.value = sections.value[0].id
+    }
+    if (!reportSectionId.value && sections.value.length) {
+      reportSectionId.value = sections.value[0].id
+    }
+    clearAlert()
+  } catch (error) {
+    pushAlert('error', error.message)
+  } finally {
+    loading.value = false
+  }
+}
+
+async function loadSectionDetail(id) {
+  if (!id) return
+  try {
+    sectionDetail.value = await apiFetch(`/sections/${id}`)
+    inactiveWeeks.value = sectionDetail.value.weeks.filter((week) => !week.active).map((week) => week.weekStart)
+  } catch (error) {
+    pushAlert('error', error.message)
+  }
+}
+
+async function loadTeamDetail(id) {
+  if (!id) return
+  try {
+    teamDetail.value = await apiFetch(`/teams/${id}`)
+    assignedStudentIds.value = teamDetail.value.students.map((student) => student.id)
+    assignedInstructorIds.value = teamDetail.value.instructors.map((instructor) => instructor.id)
+  } catch (error) {
+    pushAlert('error', error.message)
+  }
+}
+
+async function loadStudentWorkspace() {
+  if (!workspaceSectionId.value) return
+  await loadSectionDetail(workspaceSectionId.value)
+
+  if (!workspaceStudentId.value && workspaceStudents.value.length) {
+    workspaceStudentId.value = workspaceStudents.value[0].id
+  }
+  if (!workspaceWeekStart.value && workspaceWeeks.value.length) {
+    workspaceWeekStart.value = workspaceWeeks.value[0].weekStart
+  }
+
+  if (!workspaceStudentId.value) return
+
+  try {
+    profile.value = await apiFetch(`/students/${workspaceStudentId.value}/profile`)
+    profileForm.value = {
+      firstName: profile.value.firstName ?? '',
+      lastName: profile.value.lastName ?? '',
+      email: profile.value.email ?? '',
+    }
+
+    const activityResponse = workspaceWeekStart.value
+      ? await apiFetch(`/students/${workspaceStudentId.value}/activities?weekStart=${workspaceWeekStart.value}`)
+      : { rows: [] }
+
+    activitiesRows.value = activityResponse.rows?.length ? activityResponse.rows : [blankActivity()]
+
+    if (workspaceSectionDetail.value?.startDate && workspaceSectionDetail.value?.endDate) {
+      const history = await apiFetch(
+        `/students/${workspaceStudentId.value}/evaluations?sectionId=${workspaceSectionId.value}&startWeek=${workspaceSectionDetail.value.startDate}&endWeek=${workspaceSectionDetail.value.endDate}`,
+      )
+      evaluationHistory.value = history.rows ?? []
+    } else {
+      evaluationHistory.value = []
+    }
+
+    refreshEvaluationDrafts()
+  } catch (error) {
+    pushAlert('error', error.message)
+  }
+}
+
+async function createRubric() {
+  try {
+    await apiFetch('/rubrics', {
+      method: 'POST',
+      body: JSON.stringify(rubricForm.value),
+    })
+    pushAlert('success', 'Rubric created.')
+    rubricForm.value = {
+      name: '',
+      criteria: [{ name: '', description: '', maxScore: 10 }],
+    }
+    await loadCatalogs()
+  } catch (error) {
+    pushAlert('error', error.message)
+  }
+}
+
+function beginEditSection() {
+  if (!sectionDetail.value) return
+  sectionFormMode.value = 'edit'
+  sectionForm.value = {
+    id: sectionDetail.value.id,
+    name: sectionDetail.value.name,
+    courseCode: sectionDetail.value.courseCode ?? '',
+    startDate: sectionDetail.value.startDate,
+    endDate: sectionDetail.value.endDate,
+    rubricId: sectionDetail.value.rubric?.id ?? null,
+  }
+}
+
+function resetSectionForm() {
+  sectionFormMode.value = 'create'
+  sectionForm.value = { id: null, name: '', courseCode: '', startDate: '', endDate: '', rubricId: null }
+}
+
+async function saveSection() {
+  try {
+    const isEdit = sectionFormMode.value === 'edit' && sectionForm.value.id
+    const path = isEdit ? `/sections/${sectionForm.value.id}` : '/sections'
+    const method = isEdit ? 'PUT' : 'POST'
+    const response = await apiFetch(path, {
+      method,
+      body: JSON.stringify(sectionForm.value),
+    })
+    pushAlert('success', isEdit ? 'Section updated.' : 'Section created.')
+    selectedSectionId.value = response.id
+    await loadCatalogs()
+    await loadSectionDetail(response.id)
+    resetSectionForm()
+  } catch (error) {
+    pushAlert('error', error.message)
+  }
+}
+
+async function saveActiveWeeks() {
+  if (!selectedSectionId.value) return
+  try {
+    await apiFetch(`/sections/${selectedSectionId.value}/active-weeks`, {
+      method: 'PUT',
+      body: JSON.stringify({ inactiveWeeks: inactiveWeeks.value }),
+    })
+    pushAlert('success', 'Active weeks updated.')
+    await loadSectionDetail(selectedSectionId.value)
+  } catch (error) {
+    pushAlert('error', error.message)
+  }
+}
+
+function beginEditTeam() {
+  if (!teamDetail.value) return
+  teamFormMode.value = 'edit'
+  teamForm.value = {
+    id: teamDetail.value.id,
+    name: teamDetail.value.name,
+    description: teamDetail.value.description ?? '',
+    website: teamDetail.value.website ?? '',
+    sectionId: sections.value.find((section) => section.name === teamDetail.value.sectionName)?.id ?? null,
+  }
+}
+
+function resetTeamForm() {
+  teamFormMode.value = 'create'
+  teamForm.value = { id: null, name: '', description: '', website: '', sectionId: selectedSectionId.value }
+}
+
+async function saveTeam() {
+  try {
+    const isEdit = teamFormMode.value === 'edit' && teamForm.value.id
+    const path = isEdit ? `/teams/${teamForm.value.id}` : '/teams'
+    const method = isEdit ? 'PUT' : 'POST'
+    const response = await apiFetch(path, {
+      method,
+      body: JSON.stringify(teamForm.value),
+    })
+    pushAlert('success', isEdit ? 'Team updated.' : 'Team created.')
+    selectedTeamId.value = response.id
+    await loadCatalogs()
+    await loadTeamDetail(response.id)
+    resetTeamForm()
+  } catch (error) {
+    pushAlert('error', error.message)
+  }
+}
+
+async function saveTeamAssignments() {
+  if (!teamDetail.value) return
+  try {
+    await apiFetch(`/teams/${teamDetail.value.id}/students`, {
+      method: 'PUT',
+      body: JSON.stringify({ studentIds: assignedStudentIds.value }),
+    })
+    await apiFetch(`/teams/${teamDetail.value.id}/instructors`, {
+      method: 'PUT',
+      body: JSON.stringify({ instructorIds: assignedInstructorIds.value }),
+    })
+    pushAlert('success', 'Team assignments updated.')
+    await loadCatalogs()
+    await loadTeamDetail(teamDetail.value.id)
+  } catch (error) {
+    pushAlert('error', error.message)
+  }
+}
+
+async function inviteStudents() {
+  try {
+    await apiFetch('/students/invite', {
+      method: 'POST',
+      body: JSON.stringify({
+        sectionId: inviteStudentsForm.value.sectionId,
+        emails: inviteStudentsForm.value.emails,
+      }),
+    })
+    pushAlert('success', 'Student invitations sent.')
+    inviteStudentsForm.value.emails = ''
+    await loadCatalogs()
+  } catch (error) {
+    pushAlert('error', error.message)
+  }
+}
+
+async function inviteInstructors() {
+  try {
+    await apiFetch('/instructors/invite', {
+      method: 'POST',
+      body: JSON.stringify({ emails: inviteInstructorsForm.value.emails }),
+    })
+    pushAlert('success', 'Instructor invitations sent.')
+    inviteInstructorsForm.value.emails = ''
+    await loadCatalogs()
+  } catch (error) {
+    pushAlert('error', error.message)
+  }
+}
+
+async function saveProfile() {
+  try {
+    await apiFetch(`/students/${workspaceStudentId.value}/profile`, {
+      method: 'PUT',
+      body: JSON.stringify(profileForm.value),
+    })
+    pushAlert('success', 'Profile updated.')
+    await loadCatalogs()
+    await loadStudentWorkspace()
+  } catch (error) {
+    pushAlert('error', error.message)
+  }
+}
+
+async function resetPassword() {
+  try {
+    await apiFetch(`/students/${workspaceStudentId.value}/reset-password`, {
+      method: 'POST',
+      body: JSON.stringify(passwordForm.value),
+    })
+    pushAlert('success', 'Password updated.')
+    passwordForm.value = { newPassword: '', confirmPassword: '' }
+  } catch (error) {
+    pushAlert('error', error.message)
   }
 }
 
 async function saveActivities() {
-  if (!currentUser.value || !currentWeek.value) {
-    return
-  }
-
-  savingActivities.value = true
-  studentActivitiesError.value = ''
-  studentActivitiesMessage.value = ''
-
   try {
-    const payload = await apiFetch(
-      `/students/${currentUser.value.id}/activities?weekStart=${currentWeek.value.startDate}`,
-      {
-        method: 'PUT',
-        body: JSON.stringify(studentActivities.value),
-      },
-    )
-    studentActivities.value = payload.rows.length > 0 ? payload.rows : [blankActivityRow()]
-    studentActivitiesMessage.value = 'Weekly activities saved.'
-    await loadTeamActivities()
+    await apiFetch(`/students/${workspaceStudentId.value}/activities?weekStart=${workspaceWeekStart.value}`, {
+      method: 'PUT',
+      body: JSON.stringify(activitiesRows.value),
+    })
+    pushAlert('success', 'Weekly activity report saved.')
+    await loadStudentWorkspace()
   } catch (error) {
-    studentActivitiesError.value = error.message || 'Unable to save weekly activities.'
-  } finally {
-    savingActivities.value = false
+    pushAlert('error', error.message)
   }
-}
-
-async function loadTeamActivities() {
-  teamActivitiesError.value = ''
-
-  if (!selectedSection.value || !currentWeek.value) {
-    teamActivityGroups.value = []
-    return
-  }
-
-  loadingTeamActivities.value = true
-
-  try {
-    const payload = await apiFetch(
-      `/sections/${selectedSection.value.id}/activities?weekStart=${currentWeek.value.startDate}`,
-    )
-    teamActivityGroups.value = payload.groups
-  } catch (error) {
-    teamActivitiesError.value = error.message || 'Unable to load team activities.'
-  } finally {
-    loadingTeamActivities.value = false
-  }
-}
-
-function initializeSubmissionRows() {
-  if (!selectedSection.value || !currentStudent.value) {
-    submitRows.value = []
-    return
-  }
-
-  submitRows.value = rosterStudents.value
-    .filter((student) => student.id !== currentStudent.value.id)
-    .map((student) => ({
-      revieweeId: student.id,
-      displayName: `${student.firstName} ${student.lastName}`,
-      teamName: student.teamName,
-      publicComment: '',
-      scores: criterionColumns.value.map((criterion) => ({
-        criterionId: criterion.id,
-        score: criterion.maxScore,
-        maxScore: criterion.maxScore,
-      })),
-    }))
 }
 
 async function submitEvaluations() {
-  if (!currentUser.value || !selectedSection.value || !currentWeek.value || submitRows.value.length === 0) {
-    return
-  }
-
-  submittingEvaluations.value = true
-  submitError.value = ''
-  submitMessage.value = ''
-
   try {
     await apiFetch(
-      `/students/${currentUser.value.id}/evaluations?sectionId=${selectedSection.value.id}&weekStart=${currentWeek.value.startDate}`,
+      `/students/${workspaceStudentId.value}/evaluations?sectionId=${workspaceSectionId.value}&weekStart=${workspaceWeekStart.value}`,
       {
         method: 'POST',
-        body: JSON.stringify({
-          submissions: submitRows.value.map((row) => ({
-            revieweeId: row.revieweeId,
-            publicComment: row.publicComment,
-            scores: row.scores.map((score) => ({
-              criterionId: score.criterionId,
-              score: Number(score.score),
-            })),
-          })),
-        }),
+        body: JSON.stringify({ submissions: evaluationDrafts.value }),
       },
     )
-    submitMessage.value = 'Peer evaluations submitted.'
+    pushAlert('success', 'Peer evaluations submitted.')
+    await loadStudentWorkspace()
   } catch (error) {
-    submitError.value = error.message || 'Unable to submit peer evaluations.'
-  } finally {
-    submittingEvaluations.value = false
+    pushAlert('error', error.message)
   }
 }
 
-async function queryEvaluations() {
-  evaluationError.value = ''
-  evaluationMessage.value = ''
-
-  if (!currentUser.value || !selectedSection.value || !evaluationFilters.value.startWeek || !evaluationFilters.value.endWeek) {
-    evaluationRows.value = []
-    return
-  }
-
-  loadingEvaluations.value = true
-
+async function loadReports() {
+  if (!reportSectionId.value) return
   try {
-    const payload = await apiFetch(
-      `/students/${currentUser.value.id}/evaluations?sectionId=${selectedSection.value.id}&startWeek=${evaluationFilters.value.startWeek}&endWeek=${evaluationFilters.value.endWeek}`,
-    )
-    evaluationRows.value = payload.rows
+    await loadSectionDetail(reportSectionId.value)
+    if (!reportWeekStart.value) {
+      reportWeekStart.value = (sectionDetail.value?.weeks?.[0]?.weekStart ?? '')
+    }
+    if (reportWeekStart.value) {
+      sectionEvaluationReport.value = await apiFetch(`/reports/sections/${reportSectionId.value}/evaluations?weekStart=${reportWeekStart.value}`)
+    }
+    if (reportTeamId.value && reportWeekStart.value) {
+      teamActivityReport.value = await apiFetch(`/teams/${reportTeamId.value}/activities?weekStart=${reportWeekStart.value}`)
+    }
+    if (reportStudentId.value && reportWeekStart.value && sectionDetail.value) {
+      studentEvaluationReport.value = await apiFetch(
+        `/reports/students/${reportStudentId.value}/evaluations?sectionId=${reportSectionId.value}&startWeek=${sectionDetail.value.startDate}&endWeek=${sectionDetail.value.endDate}`,
+      )
+    }
   } catch (error) {
-    evaluationError.value = error.message || 'Unable to load evaluations.'
-  } finally {
-    loadingEvaluations.value = false
+    pushAlert('error', error.message)
   }
 }
 
-function resetEvaluations() {
-  if (weekOptions.value.length === 0) {
-    return
-  }
-
-  evaluationFilters.value = {
-    startWeek: weekOptions.value[0].startDate,
-    endWeek: weekOptions.value[weekOptions.value.length - 1].startDate,
-  }
-  queryEvaluations()
-}
-
-function goToPreviousWeek() {
-  if (!previousWeekDisabled.value) {
-    selectedWeekIndex.value -= 1
-  }
-}
-
-function goToNextWeek() {
-  if (!nextWeekDisabled.value) {
-    selectedWeekIndex.value += 1
-  }
-}
-
-function goToCurrentWeek() {
-  const todayIso = toIsoDate(new Date())
-  const matchingIndex = findWeekIndexForDate(todayIso)
-  selectedWeekIndex.value = matchingIndex >= 0 ? matchingIndex : 0
-}
-
-watch(selectedWeekIndex, async () => {
-  if (!selectedSection.value || !currentUser.value) {
-    return
-  }
-
-  await Promise.all([loadStudentActivities(), loadTeamActivities()])
-})
-
-watch(activeView, async (view) => {
-  if (!selectedSection.value) {
-    return
-  }
-
-  if (view === 'my-evaluations') {
-    await queryEvaluations()
-  } else if (view === 'submit-evaluations') {
-    initializeSubmissionRows()
-  } else if (view === 'my-activities') {
-    await loadStudentActivities()
-  } else if (view === 'team-activities') {
-    await loadTeamActivities()
-  } else if (view === 'user-profile') {
-    await loadProfile()
+watch(selectedSectionId, async (value) => {
+  if (value) {
+    await loadSectionDetail(value)
   }
 })
 
-onMounted(fetchSections)
+watch(selectedTeamId, async (value) => {
+  if (value) {
+    await loadTeamDetail(value)
+  }
+})
+
+watch([workspaceSectionId, workspaceStudentId, workspaceWeekStart], async () => {
+  if (workspaceSectionId.value) {
+    await loadStudentWorkspace()
+  }
+})
+
+watch([reportSectionId, reportTeamId, reportStudentId, reportWeekStart], async () => {
+  if (nav.value === 'instructor-reports') {
+    await loadReports()
+  }
+})
+
+watch([currentStudentTeamMembers, evaluationCriteria], () => {
+  refreshEvaluationDrafts()
+})
+
+onMounted(async () => {
+  await loadCatalogs()
+  resetSectionForm()
+  resetTeamForm()
+})
 </script>
 
 <template>
-  <div class="app-shell">
-    <aside class="sidebar">
-      <div class="brand">
-        <div class="brand-mark">
-          <span class="pulse-line"></span>
-        </div>
-        <h1>Project Pulse</h1>
-      </div>
+  <v-app>
+    <v-navigation-drawer permanent width="280">
+      <v-list-item title="Project Pulse" subtitle="AI-assisted dashboard" />
+      <v-divider class="mb-2" />
+      <v-list nav density="comfortable" v-model:selected="nav">
+        <v-list-item value="overview" prepend-icon="mdi-view-dashboard" title="Overview" />
+        <v-list-item value="admin-rubrics" prepend-icon="mdi-format-list-bulleted-square" title="Admin · Rubrics" />
+        <v-list-item value="admin-sections" prepend-icon="mdi-google-classroom" title="Admin · Sections" />
+        <v-list-item value="admin-teams" prepend-icon="mdi-account-group" title="Admin · Teams" />
+        <v-list-item value="admin-people" prepend-icon="mdi-account-multiple" title="Admin · People" />
+        <v-list-item value="student-workspace" prepend-icon="mdi-account-school" title="Student Workspace" />
+        <v-list-item value="instructor-reports" prepend-icon="mdi-chart-box" title="Instructor Reports" />
+      </v-list>
+    </v-navigation-drawer>
 
-      <nav class="nav">
-        <section v-for="group in navGroups" :key="group.label" class="nav-group">
-          <button class="nav-group-title" type="button" @click="toggleNavGroup(group.label)">
-            <span>{{ group.label }}</span>
-            <span v-if="group.items.length > 1" class="caret">{{ collapsedGroups[group.label] ? '›' : '⌄' }}</span>
-          </button>
+    <v-main>
+      <v-container fluid class="pa-6">
+        <v-row class="mb-3" align="center">
+          <v-col cols="12" md="8">
+            <div class="text-h4 font-weight-bold">Project Pulse</div>
+            <div class="text-medium-emphasis">Senior design administration, student reporting, and instructor analytics.</div>
+          </v-col>
+          <v-col cols="12" md="4" class="d-flex justify-end">
+            <v-btn color="primary" prepend-icon="mdi-refresh" :loading="loading" @click="loadCatalogs">Refresh</v-btn>
+          </v-col>
+        </v-row>
 
-          <div v-show="!collapsedGroups[group.label]" class="nav-items">
-            <button
-              v-for="item in group.items"
-              :key="item.id"
-              type="button"
-              class="nav-item"
-              :class="{ active: item.id === activeView }"
-              @click="activeView = item.id"
-            >
-              <span class="nav-icon">{{ item.icon }}</span>
-              <span>{{ item.title }}</span>
-            </button>
-          </div>
-        </section>
-      </nav>
-    </aside>
+        <v-alert
+          v-if="alert.text"
+          :type="alert.type"
+          variant="tonal"
+          closable
+          class="mb-4"
+          @click:close="clearAlert"
+        >
+          {{ alert.text }}
+        </v-alert>
 
-    <div class="main-shell">
-      <header class="topbar">
-        <div class="crumbs">
-          <span class="menu-toggle">☰</span>
-          <span class="crumb-sep">›</span>
-          <strong>{{ pageMeta.group }}</strong>
-          <span class="crumb-sep">›</span>
-          <span>{{ pageMeta.title }}</span>
-        </div>
-
-        <div class="profile-tools">
-          <span class="tool-circle">↻</span>
-          <span class="tool-circle">⤢</span>
-          <div class="user-chip">
-            <span class="avatar">●</span>
-            <strong>{{ currentUser?.firstName || 'Student' }}</strong>
-            <span class="crumb-sep">⌄</span>
-          </div>
-        </div>
-      </header>
-
-      <main class="workspace">
-        <div v-if="loadingSections || loadingDetail" class="page-card empty-state">
-          <p>Loading Project Pulse...</p>
-        </div>
-
-        <div v-else-if="sectionsError || detailError" class="page-card empty-state error-state">
-          <p>{{ sectionsError || detailError }}</p>
-        </div>
-
-        <div v-else-if="!selectedSection" class="page-card empty-state">
-          <p>No sections available.</p>
-        </div>
-
-        <template v-else>
-          <section class="page-card">
-            <header class="card-header">
-              <h2>{{ pageMeta.panelTitle }}</h2>
-            </header>
-
-            <div v-if="activeView === 'home'" class="card-body home-body">
-              <div class="section-switcher">
-                <label for="section-select">Active course:</label>
-                <select
-                  id="section-select"
-                  :value="selectedSectionId"
-                  @change="selectSection(Number($event.target.value))"
-                >
-                  <option v-for="section in sections" :key="section.id" :value="section.id">
-                    {{ section.courseCode }} - {{ section.name }}
-                  </option>
-                </select>
-              </div>
-
-              <div class="summary-grid">
-                <article class="summary-box">
-                  <span>Course</span>
-                  <strong>{{ selectedSection.courseCode }}</strong>
-                  <p>{{ selectedSection.name }}</p>
-                </article>
-                <article class="summary-box">
-                  <span>Total students</span>
-                  <strong>{{ selectedSectionSummary.totalStudents }}</strong>
-                  <p>{{ selectedSectionSummary.teamCount }} teams active</p>
-                </article>
-                <article class="summary-box">
-                  <span>Rubric</span>
-                  <strong>{{ selectedSectionSummary.rubricName }}</strong>
-                  <p>{{ criterionColumns.length }} evaluation criteria</p>
-                </article>
-                <article class="summary-box">
-                  <span>Window</span>
-                  <strong>{{ currentWeek?.label || 'No week' }}</strong>
-                  <p>{{ currentWeek?.range || 'No date range available' }}</p>
-                </article>
-              </div>
-
-              <div class="home-tables">
-                <div class="mini-card">
-                  <h3>Team roster</h3>
-                  <table class="data-table compact">
-                    <thead>
-                      <tr>
-                        <th>Name</th>
-                        <th>Team</th>
-                        <th>Email</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr v-for="student in rosterStudents" :key="student.id">
-                        <td>{{ student.firstName }} {{ student.lastName }}</td>
-                        <td>{{ student.teamName }}</td>
-                        <td>{{ student.email }}</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-
-                <div class="mini-card">
-                  <h3>Rubric criteria</h3>
-                  <table class="data-table compact">
-                    <thead>
-                      <tr>
-                        <th>Criterion</th>
-                        <th>Max score</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr v-for="criterion in criterionColumns" :key="criterion.id">
-                        <td>{{ criterion.name }}</td>
-                        <td>{{ criterion.maxScore }}</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-
-            <div v-else-if="activeView === 'my-activities'" class="card-body">
-              <div class="week-toolbar">
-                <div class="field-group inline">
-                  <label>Pick a week:</label>
-                  <div class="fake-input">{{ currentWeek?.label || 'No week selected' }}</div>
-                </div>
-                <button
-                  class="action-btn nav-btn"
-                  :disabled="previousWeekDisabled"
-                  @click="goToPreviousWeek"
-                >
-                  ‹ Previous Week
-                </button>
-                <div class="week-range">{{ currentWeek?.range || 'No range available' }}</div>
-                <button class="action-btn nav-btn" :disabled="nextWeekDisabled" @click="goToNextWeek">
-                  Next Week ›
-                </button>
-                <button class="action-btn nav-btn" @click="goToCurrentWeek">Go to current week</button>
-              </div>
-
-              <p v-if="studentActivitiesMessage" class="message-banner success">{{ studentActivitiesMessage }}</p>
-              <p v-if="studentActivitiesError" class="message-banner error">{{ studentActivitiesError }}</p>
-
-              <div class="stack-actions">
-                <button class="action-btn" @click="addActivityRow">Add row</button>
-                <button class="action-btn primary" :disabled="savingActivities" @click="saveActivities">
-                  {{ savingActivities ? 'Saving...' : 'Save Activities' }}
-                </button>
-              </div>
-
-              <div class="table-scroll">
-                <table class="data-table wide">
-                  <thead>
-                    <tr>
-                      <th>Category</th>
-                      <th>Activity</th>
-                      <th>Description</th>
-                      <th>Planned Hours</th>
-                      <th>Actual Hours</th>
-                      <th>Status</th>
-                      <th>Operations</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr v-for="(row, index) in studentActivities" :key="row.id ?? index">
-                      <td><input v-model="row.category" class="table-input" /></td>
-                      <td><input v-model="row.activity" class="table-input" /></td>
-                      <td><textarea v-model="row.description" class="table-textarea"></textarea></td>
-                      <td><input v-model.number="row.plannedHours" type="number" min="0" class="table-input small" /></td>
-                      <td><input v-model.number="row.actualHours" type="number" min="0" class="table-input small" /></td>
-                      <td>
-                        <select v-model="row.status" class="table-select">
-                          <option>COMPLETED</option>
-                          <option>IN REVIEW</option>
-                          <option>PLANNED</option>
-                        </select>
-                      </td>
-                      <td><button class="table-action" @click="removeActivityRow(index)">Remove</button></td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            <div v-else-if="activeView === 'team-activities'" class="card-body">
-              <div class="week-toolbar">
-                <div class="field-group inline">
-                  <label>Pick a week:</label>
-                  <div class="fake-input">{{ currentWeek?.label || 'No week selected' }}</div>
-                </div>
-                <button
-                  class="action-btn nav-btn"
-                  :disabled="previousWeekDisabled"
-                  @click="goToPreviousWeek"
-                >
-                  ‹ Previous Week
-                </button>
-                <div class="week-range">{{ currentWeek?.range || 'No range available' }}</div>
-                <button class="action-btn nav-btn" :disabled="nextWeekDisabled" @click="goToNextWeek">
-                  Next Week ›
-                </button>
-                <button class="action-btn nav-btn" @click="goToCurrentWeek">Go to current week</button>
-              </div>
-
-              <p v-if="teamActivitiesError" class="message-banner error">{{ teamActivitiesError }}</p>
-
-              <div class="activity-stack">
-                <section v-for="group in teamActivityGroups" :key="group.studentId" class="activity-group">
-                  <h3>{{ group.studentName }}'s Weekly Activities:</h3>
-                  <table class="data-table compact">
-                    <thead>
-                      <tr>
-                        <th>Category</th>
-                        <th>Activity</th>
-                        <th>Description</th>
-                        <th>Planned Hours</th>
-                        <th>Actual Hours</th>
-                        <th>Status</th>
-                        <th>Operations</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr v-if="group.rows.length === 0">
-                        <td colspan="7">No activity rows for this week.</td>
-                      </tr>
-                      <tr v-for="row in group.rows" :key="row.id">
-                        <td><span class="tag">{{ row.category }}</span></td>
-                        <td>{{ row.activity }}</td>
-                        <td>{{ row.description }}</td>
-                        <td>{{ row.plannedHours }}</td>
-                        <td>{{ row.actualHours }}</td>
-                        <td>
-                          <span class="status-tag" :class="{ pending: row.status !== 'COMPLETED' }">
-                            {{ row.status }}
-                          </span>
-                        </td>
-                        <td><span class="op-badge">⋯</span></td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </section>
-              </div>
-            </div>
-
-            <div v-else-if="activeView === 'my-evaluations'" class="card-body">
-              <div class="toolbar-row">
-                <div class="filter-grid">
-                  <div class="field-group">
-                    <label>Start Week:</label>
-                    <select v-model="evaluationFilters.startWeek" class="section-filter">
-                      <option v-for="option in weekOptions" :key="option.startDate" :value="option.startDate">
-                        {{ option.label }}
-                      </option>
-                    </select>
+        <template v-if="nav === 'overview'">
+          <v-row>
+            <v-col v-for="card in overviewCards" :key="card.title" cols="12" md="3">
+              <v-card class="fill-height">
+                <v-card-text class="d-flex align-center ga-4">
+                  <v-icon size="36" color="primary">{{ card.icon }}</v-icon>
+                  <div>
+                    <div class="text-overline">{{ card.title }}</div>
+                    <div class="text-h4 font-weight-bold">{{ card.value }}</div>
                   </div>
-                  <div class="field-group">
-                    <label>End Week:</label>
-                    <select v-model="evaluationFilters.endWeek" class="section-filter">
-                      <option v-for="option in weekOptions" :key="option.startDate" :value="option.startDate">
-                        {{ option.label }}
-                      </option>
-                    </select>
-                  </div>
-                  <button class="action-btn primary" :disabled="loadingEvaluations" @click="queryEvaluations">
-                    {{ loadingEvaluations ? 'Loading...' : 'Query' }}
-                  </button>
-                  <button class="action-btn" @click="resetEvaluations">Reset</button>
-                </div>
-
-                <div class="range-row">
-                  <span>
-                    Start Week:
-                    <strong>{{ findWeekOption(evaluationFilters.startWeek)?.range || 'Not selected' }}</strong>
-                  </span>
-                  <span>
-                    End Week:
-                    <strong>{{ findWeekOption(evaluationFilters.endWeek)?.range || 'Not selected' }}</strong>
-                  </span>
-                </div>
-              </div>
-
-              <p v-if="evaluationError" class="message-banner error">{{ evaluationError }}</p>
-
-              <div class="table-scroll">
-                <table class="data-table wide">
-                  <thead>
-                    <tr>
-                      <th>Week</th>
-                      <th>Average Total Score</th>
-                      <th v-for="criterion in criterionColumns" :key="criterion.id">
-                        {{ criterion.name }}
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr v-if="evaluationRows.length === 0">
-                      <td :colspan="criterionColumns.length + 2">No evaluations found for this range.</td>
-                    </tr>
-                    <tr v-for="row in evaluationRows" :key="row.weekStart">
-                      <td>{{ formatWeekLabel(findWeekOption(row.weekStart)) }}</td>
-                      <td>{{ row.averageTotalScore.toFixed(2) }}</td>
-                      <td v-for="(score, index) in row.criterionScores" :key="`${row.weekStart}-${index}`">
-                        {{ score.toFixed(2) }}
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            <div v-else-if="activeView === 'submit-evaluations'" class="card-body">
-              <div class="intro-block">
-                <p>
-                  Submit Peer Evaluations for week:
-                  <span class="highlight-chip">{{ submitWeekLabel }}</span>
-                </p>
-                <p class="subcopy">
-                  Scores respect each criterion maximum. Comments and scores are saved when you submit.
-                </p>
-              </div>
-
-              <p v-if="submitMessage" class="message-banner success">{{ submitMessage }}</p>
-              <p v-if="submitError" class="message-banner error">{{ submitError }}</p>
-
-              <div class="table-scroll">
-                <table class="data-table wide">
-                  <thead>
-                    <tr>
-                      <th>Student Name</th>
-                      <th v-for="criterion in criterionColumns" :key="criterion.id">
-                        {{ criterion.name }}
-                      </th>
-                      <th>Public Comment</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr v-if="submitRows.length === 0">
-                      <td :colspan="criterionColumns.length + 2">No peers available to evaluate.</td>
-                    </tr>
-                    <tr v-for="student in submitRows" :key="student.revieweeId">
-                      <td>
-                        <strong>{{ student.displayName }}</strong>
-                        <div class="subcell">{{ student.teamName }}</div>
-                      </td>
-                      <td v-for="score in student.scores" :key="`${student.revieweeId}-${score.criterionId}`">
-                        <input
-                          v-model.number="score.score"
-                          type="number"
-                          min="0"
-                          :max="score.maxScore"
-                          class="score-input"
-                        />
-                      </td>
-                      <td class="comment-cell">
-                        <textarea v-model="student.publicComment" class="table-textarea"></textarea>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-
-              <div class="stack-actions">
-                <button
-                  class="action-btn primary"
-                  :disabled="submittingEvaluations || submitRows.length === 0"
-                  @click="submitEvaluations"
-                >
-                  {{ submittingEvaluations ? 'Submitting...' : 'Submit Evaluations' }}
-                </button>
-              </div>
-            </div>
-
-            <div v-else-if="activeView === 'user-profile'" class="card-body form-body">
-              <p v-if="profileMessage" class="message-banner success">{{ profileMessage }}</p>
-              <p v-if="profileError" class="message-banner error">{{ profileError }}</p>
-
-              <div class="profile-form">
-                <div class="form-row">
-                  <label>Id</label>
-                  <div class="fake-field disabled">{{ currentUser?.id }}</div>
-                </div>
-                <div class="form-row">
-                  <label><span class="required">*</span> Username</label>
-                  <div class="fake-field">{{ currentUser?.username }}</div>
-                </div>
-                <div class="form-row">
-                  <label><span class="required">*</span> First Name</label>
-                  <input v-model="profileForm.firstName" class="form-input" />
-                </div>
-                <div class="form-row">
-                  <label><span class="required">*</span> Last Name</label>
-                  <input v-model="profileForm.lastName" class="form-input" />
-                </div>
-                <div class="form-row">
-                  <label><span class="required">*</span> Email</label>
-                  <input v-model="profileForm.email" class="form-input" />
-                </div>
-                <div class="form-row">
-                  <label>Status</label>
-                  <div class="fake-field disabled">{{ currentUser?.status }}</div>
-                </div>
-                <div class="form-row">
-                  <label>Roles</label>
-                  <div class="role-chip">{{ currentUser?.role }}</div>
-                </div>
-                <button class="action-btn primary update-btn" :disabled="savingProfile" @click="updateProfile">
-                  {{ savingProfile ? 'Updating...' : 'Update' }}
-                </button>
-              </div>
-            </div>
-
-            <div v-else-if="activeView === 'reset-password'" class="card-body form-body">
-              <p v-if="passwordMessage" class="message-banner success">{{ passwordMessage }}</p>
-              <p v-if="passwordError" class="message-banner error">{{ passwordError }}</p>
-
-              <div class="profile-form">
-                <div class="form-row">
-                  <label><span class="required">*</span> New Password</label>
-                  <input v-model="resetPasswordForm.newPassword" type="password" class="form-input" />
-                </div>
-                <div class="form-row">
-                  <label><span class="required">*</span> Confirm Password</label>
-                  <input v-model="resetPasswordForm.confirmPassword" type="password" class="form-input" />
-                </div>
-                <button class="action-btn primary update-btn" :disabled="savingPassword" @click="resetPassword">
-                  {{ savingPassword ? 'Saving...' : 'Update Password' }}
-                </button>
-              </div>
-            </div>
-          </section>
-
-          <footer class="page-footer">Project Pulse 1.5.0</footer>
+                </v-card-text>
+              </v-card>
+            </v-col>
+          </v-row>
+          <v-row class="mt-1">
+            <v-col cols="12" md="7">
+              <v-card>
+                <v-card-title>Sections</v-card-title>
+                <v-data-table :items="sections" :headers="[
+                  { title: 'Name', key: 'name' },
+                  { title: 'Course', key: 'courseCode' },
+                ]" />
+              </v-card>
+            </v-col>
+            <v-col cols="12" md="5">
+              <v-card>
+                <v-card-title>Team Snapshot</v-card-title>
+                <v-list>
+                  <v-list-item v-for="team in teams.slice(0, 6)" :key="team.id">
+                    <v-list-item-title>{{ team.name }}</v-list-item-title>
+                    <v-list-item-subtitle>{{ team.sectionName }} · {{ team.students.length }} students</v-list-item-subtitle>
+                  </v-list-item>
+                </v-list>
+              </v-card>
+            </v-col>
+          </v-row>
         </template>
-      </main>
-    </div>
-  </div>
+
+        <template v-else-if="nav === 'admin-rubrics'">
+          <v-row>
+            <v-col cols="12" md="6">
+              <v-card>
+                <v-card-title>Create Rubric</v-card-title>
+                <v-card-text>
+                  <v-text-field v-model="rubricForm.name" label="Rubric name" />
+                  <v-card v-for="(criterion, index) in rubricForm.criteria" :key="index" class="mb-3" variant="outlined">
+                    <v-card-text>
+                      <div class="d-flex justify-space-between align-center mb-2">
+                        <div class="text-subtitle-2">Criterion {{ index + 1 }}</div>
+                        <v-btn icon="mdi-delete" size="small" variant="text" @click="removeCriterion(index)" />
+                      </div>
+                      <v-text-field v-model="criterion.name" label="Name" />
+                      <v-textarea v-model="criterion.description" label="Description" rows="2" />
+                      <v-text-field v-model.number="criterion.maxScore" type="number" label="Max score" />
+                    </v-card-text>
+                  </v-card>
+                  <div class="d-flex ga-2">
+                    <v-btn variant="tonal" prepend-icon="mdi-plus" @click="addCriterion">Add Criterion</v-btn>
+                    <v-btn color="primary" prepend-icon="mdi-content-save" @click="createRubric">Create Rubric</v-btn>
+                  </div>
+                </v-card-text>
+              </v-card>
+            </v-col>
+            <v-col cols="12" md="6">
+              <v-card>
+                <v-card-title>Existing Rubrics</v-card-title>
+                <v-data-table
+                  :items="rubrics"
+                  :headers="[
+                    { title: 'Name', key: 'name' },
+                    { title: 'Criteria', key: 'criteria.length' },
+                  ]"
+                >
+                  <template #item.criteria.length="{ item }">
+                    {{ item.criteria?.length ?? 0 }}
+                  </template>
+                </v-data-table>
+              </v-card>
+            </v-col>
+          </v-row>
+        </template>
+
+        <template v-else-if="nav === 'admin-sections'">
+          <v-row>
+            <v-col cols="12" md="5">
+              <v-card class="mb-4">
+                <v-card-title>{{ sectionFormMode === 'edit' ? 'Edit Section' : 'Create Section' }}</v-card-title>
+                <v-card-text>
+                  <v-text-field v-model="sectionForm.name" label="Section name" />
+                  <v-text-field v-model="sectionForm.courseCode" label="Course code" />
+                  <v-text-field v-model="sectionForm.startDate" type="date" label="Start date" />
+                  <v-text-field v-model="sectionForm.endDate" type="date" label="End date" />
+                  <v-select v-model="sectionForm.rubricId" :items="rubricItems" label="Rubric" />
+                  <div class="d-flex ga-2">
+                    <v-btn color="primary" @click="saveSection">{{ sectionFormMode === 'edit' ? 'Save Changes' : 'Create Section' }}</v-btn>
+                    <v-btn variant="tonal" @click="resetSectionForm">Reset</v-btn>
+                  </div>
+                </v-card-text>
+              </v-card>
+              <v-card>
+                <v-card-title>Sections</v-card-title>
+                <v-list>
+                  <v-list-item
+                    v-for="section in sections"
+                    :key="section.id"
+                    :active="selectedSectionId === section.id"
+                    @click="selectedSectionId = section.id"
+                  >
+                    <v-list-item-title>{{ section.name }}</v-list-item-title>
+                    <v-list-item-subtitle>{{ section.courseCode }}</v-list-item-subtitle>
+                  </v-list-item>
+                </v-list>
+              </v-card>
+            </v-col>
+            <v-col cols="12" md="7">
+              <v-card v-if="sectionDetail">
+                <v-card-title class="d-flex justify-space-between">
+                  <span>{{ sectionDetail.name }}</span>
+                  <v-btn variant="tonal" size="small" prepend-icon="mdi-pencil" @click="beginEditSection">Edit</v-btn>
+                </v-card-title>
+                <v-card-text>
+                  <div class="mb-3">Rubric: <strong>{{ sectionDetail.rubric?.name ?? 'None' }}</strong></div>
+                  <div class="mb-3">Dates: {{ sectionDetail.startDate }} to {{ sectionDetail.endDate }}</div>
+                  <v-select
+                    v-model="inactiveWeeks"
+                    :items="sectionWeekItems(sectionDetail)"
+                    label="Inactive weeks"
+                    multiple
+                    chips
+                    closable-chips
+                  />
+                  <v-btn color="primary" class="mb-4" @click="saveActiveWeeks">Save Active Weeks</v-btn>
+                  <div class="text-subtitle-1 mb-2">Teams</div>
+                  <v-chip v-for="team in sectionDetail.teams" :key="team.id" class="ma-1">{{ team.name }}</v-chip>
+                  <div class="text-subtitle-1 mt-4 mb-2">Unassigned Students</div>
+                  <v-chip v-for="student in sectionDetail.studentsNotAssignedToTeams" :key="student.id" class="ma-1" color="secondary">
+                    {{ student.firstName }} {{ student.lastName }}
+                  </v-chip>
+                </v-card-text>
+              </v-card>
+            </v-col>
+          </v-row>
+        </template>
+
+        <template v-else-if="nav === 'admin-teams'">
+          <v-row>
+            <v-col cols="12" md="5">
+              <v-card class="mb-4">
+                <v-card-title>{{ teamFormMode === 'edit' ? 'Edit Team' : 'Create Team' }}</v-card-title>
+                <v-card-text>
+                  <v-text-field v-model="teamForm.name" label="Team name" />
+                  <v-textarea v-model="teamForm.description" label="Description" rows="2" />
+                  <v-text-field v-model="teamForm.website" label="Website" />
+                  <v-select v-model="teamForm.sectionId" :items="sectionItems" label="Section" />
+                  <div class="d-flex ga-2">
+                    <v-btn color="primary" @click="saveTeam">{{ teamFormMode === 'edit' ? 'Save Changes' : 'Create Team' }}</v-btn>
+                    <v-btn variant="tonal" @click="resetTeamForm">Reset</v-btn>
+                  </div>
+                </v-card-text>
+              </v-card>
+
+              <v-card>
+                <v-card-title>Teams</v-card-title>
+                <v-list>
+                  <v-list-item
+                    v-for="team in teams"
+                    :key="team.id"
+                    :active="selectedTeamId === team.id"
+                    @click="selectedTeamId = team.id"
+                  >
+                    <v-list-item-title>{{ team.name }}</v-list-item-title>
+                    <v-list-item-subtitle>{{ team.sectionName }}</v-list-item-subtitle>
+                  </v-list-item>
+                </v-list>
+              </v-card>
+            </v-col>
+            <v-col cols="12" md="7">
+              <v-card v-if="teamDetail">
+                <v-card-title class="d-flex justify-space-between">
+                  <span>{{ teamDetail.name }}</span>
+                  <v-btn variant="tonal" size="small" prepend-icon="mdi-pencil" @click="beginEditTeam">Edit</v-btn>
+                </v-card-title>
+                <v-card-text>
+                  <div class="mb-2">{{ teamDetail.description }}</div>
+                  <div class="mb-4">{{ teamDetail.website }}</div>
+                  <v-select v-model="assignedStudentIds" :items="availableStudentsForTeam" label="Assigned students" multiple chips />
+                  <v-select v-model="assignedInstructorIds" :items="instructorItems" label="Assigned instructors" multiple chips />
+                  <v-btn color="primary" class="mb-4" @click="saveTeamAssignments">Save Assignments</v-btn>
+
+                  <div class="text-subtitle-1 mb-2">Current Members</div>
+                  <v-chip v-for="student in teamDetail.students" :key="student.id" class="ma-1">{{ student.firstName }} {{ student.lastName }}</v-chip>
+                  <div class="text-subtitle-1 mt-4 mb-2">Current Instructors</div>
+                  <v-chip v-for="instructor in teamDetail.instructors" :key="instructor.id" class="ma-1" color="secondary">
+                    {{ instructor.firstName }} {{ instructor.lastName }}
+                  </v-chip>
+                </v-card-text>
+              </v-card>
+            </v-col>
+          </v-row>
+        </template>
+
+        <template v-else-if="nav === 'admin-people'">
+          <v-row>
+            <v-col cols="12" md="6">
+              <v-card class="mb-4">
+                <v-card-title>Invite Students</v-card-title>
+                <v-card-text>
+                  <v-select v-model="inviteStudentsForm.sectionId" :items="sectionItems" label="Section" />
+                  <v-textarea v-model="inviteStudentsForm.emails" label="Emails (semicolon separated or array text)" rows="3" />
+                  <v-btn color="primary" @click="inviteStudents">Send Student Invites</v-btn>
+                </v-card-text>
+              </v-card>
+              <v-card>
+                <v-card-title>Students</v-card-title>
+                <v-data-table :items="students" :headers="[
+                  { title: 'Name', key: 'firstName' },
+                  { title: 'Email', key: 'email' },
+                  { title: 'Section', key: 'sectionName' },
+                  { title: 'Team', key: 'teamName' },
+                ]">
+                  <template #item.firstName="{ item }">
+                    {{ item.firstName }} {{ item.lastName }}
+                  </template>
+                </v-data-table>
+              </v-card>
+            </v-col>
+            <v-col cols="12" md="6">
+              <v-card class="mb-4">
+                <v-card-title>Invite Instructors</v-card-title>
+                <v-card-text>
+                  <v-textarea v-model="inviteInstructorsForm.emails" label="Emails (semicolon separated or array text)" rows="3" />
+                  <v-btn color="primary" @click="inviteInstructors">Send Instructor Invites</v-btn>
+                </v-card-text>
+              </v-card>
+              <v-card>
+                <v-card-title>Instructors</v-card-title>
+                <v-data-table :items="instructors" :headers="[
+                  { title: 'Name', key: 'firstName' },
+                  { title: 'Email', key: 'email' },
+                  { title: 'Active', key: 'active' },
+                ]">
+                  <template #item.firstName="{ item }">
+                    {{ item.firstName }} {{ item.lastName }}
+                  </template>
+                </v-data-table>
+              </v-card>
+            </v-col>
+          </v-row>
+        </template>
+
+        <template v-else-if="nav === 'student-workspace'">
+          <v-row>
+            <v-col cols="12">
+              <v-card class="mb-4">
+                <v-card-text class="d-flex flex-wrap ga-4">
+                  <v-select v-model="workspaceSectionId" :items="sectionItems" label="Section" class="selector" />
+                  <v-select v-model="workspaceStudentId" :items="studentItems.filter((item) => item.title.includes(selectedWorkspaceSectionName ?? ''))" label="Student" class="selector" />
+                  <v-select
+                    v-model="workspaceWeekStart"
+                    :items="sectionWeekItems(workspaceSectionDetail)"
+                    label="Week"
+                    class="selector"
+                  />
+                </v-card-text>
+              </v-card>
+            </v-col>
+
+            <v-col cols="12" md="4">
+              <v-card class="mb-4">
+                <v-card-title>Profile</v-card-title>
+                <v-card-text>
+                  <v-text-field v-model="profileForm.firstName" label="First name" />
+                  <v-text-field v-model="profileForm.lastName" label="Last name" />
+                  <v-text-field v-model="profileForm.email" label="Email" />
+                  <v-btn color="primary" @click="saveProfile">Save Profile</v-btn>
+                </v-card-text>
+              </v-card>
+
+              <v-card>
+                <v-card-title>Reset Password</v-card-title>
+                <v-card-text>
+                  <v-text-field v-model="passwordForm.newPassword" label="New password" type="password" />
+                  <v-text-field v-model="passwordForm.confirmPassword" label="Confirm password" type="password" />
+                  <v-btn color="primary" @click="resetPassword">Update Password</v-btn>
+                </v-card-text>
+              </v-card>
+            </v-col>
+
+            <v-col cols="12" md="8">
+              <v-card class="mb-4">
+                <v-card-title class="d-flex justify-space-between">
+                  <span>Weekly Activity Report</span>
+                  <v-btn variant="tonal" prepend-icon="mdi-plus" @click="addActivityRow">Add Row</v-btn>
+                </v-card-title>
+                <v-card-text>
+                  <v-row v-for="(row, index) in activitiesRows" :key="index" class="mb-2">
+                    <v-col cols="12" md="2"><v-text-field v-model="row.category" label="Category" /></v-col>
+                    <v-col cols="12" md="2"><v-text-field v-model="row.activity" label="Activity" /></v-col>
+                    <v-col cols="12" md="3"><v-text-field v-model="row.description" label="Description" /></v-col>
+                    <v-col cols="12" md="1"><v-text-field v-model.number="row.plannedHours" type="number" label="Planned" /></v-col>
+                    <v-col cols="12" md="1"><v-text-field v-model.number="row.actualHours" type="number" label="Actual" /></v-col>
+                    <v-col cols="12" md="2"><v-text-field v-model="row.status" label="Status" /></v-col>
+                    <v-col cols="12" md="1" class="d-flex align-center">
+                      <v-btn icon="mdi-delete" variant="text" @click="activitiesRows.splice(index, 1)" />
+                    </v-col>
+                  </v-row>
+                  <v-btn color="primary" @click="saveActivities">Save Activities</v-btn>
+                </v-card-text>
+              </v-card>
+
+              <v-card class="mb-4">
+                <v-card-title>My Evaluation History</v-card-title>
+                <v-data-table :items="evaluationHistory" :headers="[
+                  { title: 'Week Start', key: 'weekStart' },
+                  { title: 'Week End', key: 'weekEnd' },
+                  { title: 'Average', key: 'averageTotalScore' },
+                ]" />
+              </v-card>
+
+              <v-card>
+                <v-card-title>Submit Peer Evaluations</v-card-title>
+                <v-card-text>
+                  <v-expansion-panels>
+                    <v-expansion-panel v-for="submission in evaluationDrafts" :key="submission.revieweeId">
+                      <v-expansion-panel-title>{{ submission.revieweeName }}</v-expansion-panel-title>
+                      <v-expansion-panel-text>
+                        <v-row v-for="score in submission.scores" :key="score.criterionId">
+                          <v-col cols="12" md="8">
+                            {{ evaluationCriteria.find((criterion) => criterion.id === score.criterionId)?.name }}
+                          </v-col>
+                          <v-col cols="12" md="4">
+                            <v-slider
+                              v-model="score.score"
+                              :min="0"
+                              :max="evaluationCriteria.find((criterion) => criterion.id === score.criterionId)?.maxScore ?? 10"
+                              step="1"
+                              thumb-label
+                            />
+                          </v-col>
+                        </v-row>
+                        <v-textarea v-model="submission.publicComment" label="Public comment" rows="2" />
+                        <v-textarea v-model="submission.privateComment" label="Private comment to instructor" rows="2" />
+                      </v-expansion-panel-text>
+                    </v-expansion-panel>
+                  </v-expansion-panels>
+                  <v-btn color="primary" class="mt-4" @click="submitEvaluations">Submit Evaluations</v-btn>
+                </v-card-text>
+              </v-card>
+            </v-col>
+          </v-row>
+        </template>
+
+        <template v-else-if="nav === 'instructor-reports'">
+          <v-row>
+            <v-col cols="12">
+              <v-card class="mb-4">
+                <v-card-text class="d-flex flex-wrap ga-4">
+                  <v-select v-model="reportSectionId" :items="sectionItems" label="Section" class="selector" />
+                  <v-select
+                    v-model="reportTeamId"
+                    :items="teamItems.filter((item) => item.title.includes(sections.find((section) => section.id === reportSectionId)?.name ?? ''))"
+                    label="Team"
+                    class="selector"
+                  />
+                  <v-select
+                    v-model="reportStudentId"
+                    :items="studentItems.filter((item) => item.title.includes(sections.find((section) => section.id === reportSectionId)?.name ?? ''))"
+                    label="Student"
+                    class="selector"
+                  />
+                  <v-select
+                    v-model="reportWeekStart"
+                    :items="sectionWeekItems(sectionDetail?.id === reportSectionId ? sectionDetail : null)"
+                    label="Week"
+                    class="selector"
+                  />
+                </v-card-text>
+              </v-card>
+            </v-col>
+
+            <v-col cols="12" md="6">
+              <v-card class="mb-4">
+                <v-card-title>Section Evaluation Report</v-card-title>
+                <v-data-table
+                  :items="sectionEvaluationReport?.rows ?? []"
+                  :headers="[
+                    { title: 'Student', key: 'studentName' },
+                    { title: 'Average', key: 'averageTotalScore' },
+                    { title: 'Submissions', key: 'submissionCount' },
+                  ]"
+                />
+              </v-card>
+
+              <v-card>
+                <v-card-title>Team WAR Report</v-card-title>
+                <v-list v-if="teamActivityReport?.groups?.length">
+                  <v-list-group v-for="group in teamActivityReport.groups" :key="group.studentId" :value="group.studentId">
+                    <template #activator="{ props }">
+                      <v-list-item v-bind="props" :title="group.studentName" :subtitle="`${group.rows.length} entries`" />
+                    </template>
+                    <v-list-item
+                      v-for="(row, index) in group.rows"
+                      :key="index"
+                      :title="row.activity"
+                      :subtitle="`${row.category} · ${row.status} · ${row.actualHours} hrs`"
+                    />
+                  </v-list-group>
+                </v-list>
+                <v-card-text v-else class="text-medium-emphasis">Select a team and week to generate the WAR report.</v-card-text>
+              </v-card>
+            </v-col>
+
+            <v-col cols="12" md="6">
+              <v-card>
+                <v-card-title>Student Evaluation Report</v-card-title>
+                <v-list v-if="studentEvaluationReport?.rows?.length">
+                  <v-list-item
+                    v-for="row in studentEvaluationReport.rows"
+                    :key="row.weekStart"
+                    :title="`${row.weekStart} to ${row.weekEnd}`"
+                    :subtitle="`Average: ${row.averageTotalScore}`"
+                  >
+                    <template #append>
+                      <v-chip size="small" color="primary">{{ row.publicComments.length }} public</v-chip>
+                      <v-chip size="small" color="secondary" class="ml-2">{{ row.privateComments.length }} private</v-chip>
+                    </template>
+                  </v-list-item>
+                </v-list>
+                <v-card-text v-else class="text-medium-emphasis">Select a student and section to generate the detailed evaluation report.</v-card-text>
+              </v-card>
+            </v-col>
+          </v-row>
+        </template>
+      </v-container>
+    </v-main>
+  </v-app>
 </template>

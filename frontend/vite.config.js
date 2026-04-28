@@ -15,6 +15,18 @@ export default defineConfig({
         target: 'http://localhost:8080',
         changeOrigin: true,
       },
+      '/teams': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+      },
+      '/instructors': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+      },
+      '/reports': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+      },
       '/rubrics': {
         target: 'http://localhost:8080',
         changeOrigin: true,

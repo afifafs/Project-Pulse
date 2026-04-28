@@ -10,10 +10,13 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "vue": "^3.5.32"
+    "@mdi/font": "^7.4.47",
+    "vue": "^3.5.32",
+    "vuetify": "^3.10.3"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^6.0.6",
+    "sass": "^1.93.2",
     "vite": "^8.0.9"
   }
 }
