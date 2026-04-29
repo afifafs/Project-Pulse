@@ -140,6 +140,12 @@ async function apiFetch(url, options = {}) {
   })
 
   if (!response.ok) {
+    const contentType = response.headers.get('content-type') ?? ''
+    if (contentType.includes('application/json')) {
+      const body = await response.json()
+      throw new Error(body.message || body.error || `Request failed: ${response.status}`)
+    }
+
     const text = await response.text()
     throw new Error(text || `Request failed: ${response.status}`)
   }
@@ -189,6 +195,35 @@ function sectionWeekItems(section) {
   }))
 }
 
+function activeWeekItems(section) {
+  return sectionWeekItems({
+    weeks: (section?.weeks ?? []).filter((week) => week.active),
+  })
+}
+
+function firstUsableStudentId(sectionName) {
+  const sectionStudents = students.value.filter((student) => student.sectionName === sectionName)
+  const teamedStudent = sectionStudents.find((student) => student.teamName)
+  return teamedStudent?.id ?? sectionStudents[0]?.id ?? null
+}
+
+function normalizeDateInput(value) {
+  if (!value) return value
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return value
+  }
+
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) {
+    return value
+  }
+
+  const year = parsed.getFullYear()
+  const month = String(parsed.getMonth() + 1).padStart(2, '0')
+  const day = String(parsed.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
 function refreshEvaluationDrafts() {
   evaluationDrafts.value = currentStudentTeamMembers.value.map((student) => ({
     revieweeId: student.id,
@@ -205,7 +240,7 @@ function refreshEvaluationDrafts() {
 async function loadCatalogs() {
   loading.value = true
   try {
-    const [sectionData, teamData, studentData, instructorData, rubricData] = await Promise.all([
+    const results = await Promise.allSettled([
       apiFetch('/sections'),
       apiFetch('/teams'),
       apiFetch('/students'),
@@ -213,11 +248,18 @@ async function loadCatalogs() {
       apiFetch('/rubrics'),
     ])
 
-    sections.value = sectionData
-    teams.value = teamData
-    students.value = studentData
-    instructors.value = instructorData
-    rubrics.value = rubricData
+    const [sectionResult, teamResult, studentResult, instructorResult, rubricResult] = results
+
+    sections.value = sectionResult.status === 'fulfilled' ? sectionResult.value : []
+    teams.value = teamResult.status === 'fulfilled' ? teamResult.value : []
+    students.value = studentResult.status === 'fulfilled' ? studentResult.value : []
+    instructors.value = instructorResult.status === 'fulfilled' ? instructorResult.value : []
+    rubrics.value = rubricResult.status === 'fulfilled' ? rubricResult.value : []
+
+    const failures = results
+      .filter((result) => result.status === 'rejected')
+      .map((result) => result.reason?.message)
+      .filter(Boolean)
 
     if (!selectedSectionId.value && sections.value.length) {
       selectedSectionId.value = sections.value[0].id
@@ -228,7 +270,11 @@ async function loadCatalogs() {
     if (!reportSectionId.value && sections.value.length) {
       reportSectionId.value = sections.value[0].id
     }
-    clearAlert()
+    if (failures.length) {
+      pushAlert('warning', failures[0])
+    } else {
+      clearAlert()
+    }
   } catch (error) {
     pushAlert('error', error.message)
   } finally {
@@ -261,11 +307,14 @@ async function loadStudentWorkspace() {
   if (!workspaceSectionId.value) return
   await loadSectionDetail(workspaceSectionId.value)
 
-  if (!workspaceStudentId.value && workspaceStudents.value.length) {
-    workspaceStudentId.value = workspaceStudents.value[0].id
+  if (!workspaceStudentId.value || !workspaceStudents.value.some((student) => student.id === workspaceStudentId.value)) {
+    workspaceStudentId.value = firstUsableStudentId(selectedWorkspaceSectionName.value)
   }
-  if (!workspaceWeekStart.value && workspaceWeeks.value.length) {
-    workspaceWeekStart.value = workspaceWeeks.value[0].weekStart
+
+  const activeWeeks = workspaceWeeks.value.filter((week) => week.active)
+  const currentWeekStillExists = workspaceWeeks.value.some((week) => week.weekStart === workspaceWeekStart.value)
+  if (!workspaceWeekStart.value || !currentWeekStillExists) {
+    workspaceWeekStart.value = activeWeeks[0]?.weekStart ?? workspaceWeeks.value[0]?.weekStart ?? ''
   }
 
   if (!workspaceStudentId.value) return
@@ -339,9 +388,14 @@ async function saveSection() {
     const isEdit = sectionFormMode.value === 'edit' && sectionForm.value.id
     const path = isEdit ? `/sections/${sectionForm.value.id}` : '/sections'
     const method = isEdit ? 'PUT' : 'POST'
+    const payload = {
+      ...sectionForm.value,
+      startDate: normalizeDateInput(sectionForm.value.startDate),
+      endDate: normalizeDateInput(sectionForm.value.endDate),
+    }
     const response = await apiFetch(path, {
       method,
-      body: JSON.stringify(sectionForm.value),
+      body: JSON.stringify(payload),
     })
     pushAlert('success', isEdit ? 'Section updated.' : 'Section created.')
     selectedSectionId.value = response.id
@@ -481,6 +535,14 @@ async function resetPassword() {
 }
 
 async function saveActivities() {
+  if (!workspaceStudentId.value) {
+    pushAlert('error', 'Select a student first.')
+    return
+  }
+  if (!workspaceWeekStart.value) {
+    pushAlert('error', 'Select an active week before saving activities.')
+    return
+  }
   try {
     await apiFetch(`/students/${workspaceStudentId.value}/activities?weekStart=${workspaceWeekStart.value}`, {
       method: 'PUT',
@@ -494,6 +556,22 @@ async function saveActivities() {
 }
 
 async function submitEvaluations() {
+  if (!workspaceStudentId.value) {
+    pushAlert('error', 'Select a student first.')
+    return
+  }
+  if (!workspaceWeekStart.value) {
+    pushAlert('error', 'Select an active week before submitting evaluations.')
+    return
+  }
+  if (!currentStudentTeamMembers.value.length) {
+    pushAlert('error', 'Assign the selected student to a team with teammates before submitting evaluations.')
+    return
+  }
+  if (!evaluationCriteria.value.length) {
+    pushAlert('error', 'The selected section needs a rubric with criteria before evaluations can be submitted.')
+    return
+  }
   try {
     await apiFetch(
       `/students/${workspaceStudentId.value}/evaluations?sectionId=${workspaceSectionId.value}&weekStart=${workspaceWeekStart.value}`,
@@ -513,8 +591,10 @@ async function loadReports() {
   if (!reportSectionId.value) return
   try {
     await loadSectionDetail(reportSectionId.value)
-    if (!reportWeekStart.value) {
-      reportWeekStart.value = (sectionDetail.value?.weeks?.[0]?.weekStart ?? '')
+    const reportWeeks = (sectionDetail.value?.weeks ?? []).filter((week) => week.active)
+    const currentReportWeekExists = (sectionDetail.value?.weeks ?? []).some((week) => week.weekStart === reportWeekStart.value)
+    if (!reportWeekStart.value || !currentReportWeekExists) {
+      reportWeekStart.value = (reportWeeks[0]?.weekStart ?? sectionDetail.value?.weeks?.[0]?.weekStart ?? '')
     }
     if (reportWeekStart.value) {
       sectionEvaluationReport.value = await apiFetch(`/reports/sections/${reportSectionId.value}/evaluations?weekStart=${reportWeekStart.value}`)
@@ -572,14 +652,14 @@ onMounted(async () => {
     <v-navigation-drawer permanent width="280">
       <v-list-item title="Project Pulse" subtitle="AI-assisted dashboard" />
       <v-divider class="mb-2" />
-      <v-list nav density="comfortable" v-model:selected="nav">
-        <v-list-item value="overview" prepend-icon="mdi-view-dashboard" title="Overview" />
-        <v-list-item value="admin-rubrics" prepend-icon="mdi-format-list-bulleted-square" title="Admin · Rubrics" />
-        <v-list-item value="admin-sections" prepend-icon="mdi-google-classroom" title="Admin · Sections" />
-        <v-list-item value="admin-teams" prepend-icon="mdi-account-group" title="Admin · Teams" />
-        <v-list-item value="admin-people" prepend-icon="mdi-account-multiple" title="Admin · People" />
-        <v-list-item value="student-workspace" prepend-icon="mdi-account-school" title="Student Workspace" />
-        <v-list-item value="instructor-reports" prepend-icon="mdi-chart-box" title="Instructor Reports" />
+      <v-list nav density="comfortable">
+        <v-list-item :active="nav === 'overview'" prepend-icon="mdi-view-dashboard" title="Overview" @click="nav = 'overview'" />
+        <v-list-item :active="nav === 'admin-rubrics'" prepend-icon="mdi-format-list-bulleted-square" title="Admin · Rubrics" @click="nav = 'admin-rubrics'" />
+        <v-list-item :active="nav === 'admin-sections'" prepend-icon="mdi-google-classroom" title="Admin · Sections" @click="nav = 'admin-sections'" />
+        <v-list-item :active="nav === 'admin-teams'" prepend-icon="mdi-account-group" title="Admin · Teams" @click="nav = 'admin-teams'" />
+        <v-list-item :active="nav === 'admin-people'" prepend-icon="mdi-account-multiple" title="Admin · People" @click="nav = 'admin-people'" />
+        <v-list-item :active="nav === 'student-workspace'" prepend-icon="mdi-account-school" title="Student Workspace" @click="nav = 'student-workspace'" />
+        <v-list-item :active="nav === 'instructor-reports'" prepend-icon="mdi-chart-box" title="Instructor Reports" @click="nav = 'instructor-reports'" />
       </v-list>
     </v-navigation-drawer>
 
@@ -865,7 +945,7 @@ onMounted(async () => {
                   <v-select v-model="workspaceStudentId" :items="studentItems.filter((item) => item.title.includes(selectedWorkspaceSectionName ?? ''))" label="Student" class="selector" />
                   <v-select
                     v-model="workspaceWeekStart"
-                    :items="sectionWeekItems(workspaceSectionDetail)"
+                    :items="activeWeekItems(workspaceSectionDetail)"
                     label="Week"
                     class="selector"
                   />
@@ -978,7 +1058,7 @@ onMounted(async () => {
                   />
                   <v-select
                     v-model="reportWeekStart"
-                    :items="sectionWeekItems(sectionDetail?.id === reportSectionId ? sectionDetail : null)"
+                    :items="activeWeekItems(sectionDetail?.id === reportSectionId ? sectionDetail : null)"
                     label="Week"
                     class="selector"
                   />
