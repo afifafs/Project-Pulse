@@ -5,11 +5,323 @@ body,
   margin: 0;
 }
 
+:root {
+  --pulse-bg: #f3f4f8;
+  --pulse-surface: #ffffff;
+  --pulse-surface-soft: #fbfbfd;
+  --pulse-border: #e3e8f2;
+  --pulse-text: #373740;
+  --pulse-muted: #7f818d;
+  --pulse-primary: #4d96f3;
+  --pulse-primary-dark: #387fdb;
+  --pulse-accent: #f2c94c;
+  --pulse-drawer: #252322;
+  --pulse-shadow: 0 14px 34px rgba(33, 37, 41, 0.08);
+}
+
 body {
-  background: #f4f6fb;
+  background:
+    linear-gradient(180deg, rgba(252, 229, 236, 0.88) 0, rgba(252, 229, 236, 0.88) 92px, var(--pulse-bg) 92px);
+  color: var(--pulse-text);
+  font-family:
+    "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
 .selector {
   min-width: 220px;
   max-width: 320px;
+}
+
+.pulse-app {
+  color: var(--pulse-text);
+}
+
+.pulse-app .v-main {
+  background: transparent;
+}
+
+.pulse-shell {
+  max-width: 1600px;
+}
+
+.pulse-drawer {
+  background: var(--pulse-drawer) !important;
+  border-right: 0 !important;
+  color: #f6f2ec;
+}
+
+.drawer-brand {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 34px 28px 24px;
+}
+
+.brand-mark {
+  display: grid;
+  place-items: center;
+  width: 74px;
+  height: 74px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.brand-mark .v-icon {
+  color: #fffaf2;
+  font-size: 52px;
+}
+
+.brand-title {
+  color: #fff8ef;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 2.1rem;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.brand-subtitle {
+  color: rgba(255, 248, 239, 0.68);
+  font-size: 0.96rem;
+  margin-top: 4px;
+}
+
+.drawer-nav {
+  padding: 10px 14px 22px;
+}
+
+.pulse-drawer .v-list {
+  background: transparent;
+}
+
+.pulse-drawer .v-list-item {
+  border-radius: 12px;
+  color: rgba(255, 248, 239, 0.88);
+  margin: 4px 0;
+  min-height: 52px;
+  padding-inline: 14px;
+}
+
+.pulse-drawer .v-list-item-title {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.pulse-drawer .v-list-item .v-icon {
+  color: rgba(255, 248, 239, 0.9);
+}
+
+.pulse-drawer .v-list-item--active {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--pulse-accent);
+}
+
+.pulse-drawer .v-list-item--active .v-icon,
+.pulse-drawer .v-list-item--active .v-list-item-title {
+  color: var(--pulse-accent);
+}
+
+.shell-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid rgba(227, 232, 242, 0.9);
+  border-radius: 24px;
+  box-shadow: var(--pulse-shadow);
+  margin-bottom: 18px;
+  padding: 14px 18px;
+  backdrop-filter: blur(12px);
+}
+
+.crumbs-wrap,
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.crumbs {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--pulse-muted);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1rem;
+}
+
+.crumbs strong {
+  color: var(--pulse-text);
+  font-size: 1.18rem;
+  font-weight: 700;
+}
+
+.topbar-icon {
+  border: 1px solid #d6dbe6;
+  color: var(--pulse-muted);
+}
+
+.user-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid var(--pulse-border);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.88);
+  padding: 6px 14px 6px 6px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.pulse-card,
+.pulse-app .v-card {
+  border: 1px solid var(--pulse-border);
+  border-radius: 18px !important;
+  box-shadow: var(--pulse-shadow) !important;
+  overflow: hidden;
+}
+
+.pulse-app .v-card-title {
+  border-bottom: 1px solid var(--pulse-border);
+  color: var(--pulse-text);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.3rem;
+  font-weight: 700;
+  padding: 22px 26px;
+}
+
+.pulse-app .v-card-text {
+  padding: 22px 26px 26px;
+}
+
+.pulse-app .text-h4,
+.pulse-app .text-h5,
+.pulse-app .text-h6,
+.pulse-app .text-subtitle-1,
+.pulse-app .text-subtitle-2,
+.pulse-app .text-overline {
+  font-family: Georgia, "Times New Roman", serif !important;
+  letter-spacing: 0 !important;
+}
+
+.pulse-app .text-h4 {
+  font-size: 2rem !important;
+}
+
+.pulse-app .text-medium-emphasis {
+  color: var(--pulse-muted) !important;
+}
+
+.pulse-app .v-alert {
+  border-radius: 14px;
+}
+
+.pulse-app .v-btn {
+  border-radius: 12px;
+  box-shadow: none;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.pulse-app .v-btn--variant-flat.bg-primary,
+.pulse-app .v-btn--variant-elevated.bg-primary {
+  background: var(--pulse-primary) !important;
+}
+
+.pulse-app .v-btn--variant-tonal {
+  border: 1px solid rgba(77, 150, 243, 0.32);
+  color: var(--pulse-primary-dark);
+}
+
+.pulse-app .v-field {
+  border-radius: 12px !important;
+}
+
+.pulse-app .v-field--variant-filled .v-field__overlay {
+  opacity: 0.02;
+}
+
+.pulse-app .v-field__outline {
+  color: var(--pulse-border) !important;
+}
+
+.pulse-app .v-label,
+.pulse-app .v-field input,
+.pulse-app .v-field textarea,
+.pulse-app .v-field .v-field__input,
+.pulse-app .v-select__selection-text {
+  color: var(--pulse-text);
+}
+
+.pulse-app .v-data-table,
+.pulse-app .v-table {
+  background: transparent !important;
+}
+
+.pulse-app .v-table thead th,
+.pulse-app .v-data-table-header__content {
+  color: #8e93a1 !important;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1rem;
+  font-weight: 700 !important;
+  letter-spacing: 0 !important;
+}
+
+.pulse-app .v-table th,
+.pulse-app .v-table td {
+  border-color: #e6ebf3 !important;
+}
+
+.pulse-app .v-table tbody td {
+  color: #5d6271;
+  font-size: 1rem;
+}
+
+.pulse-app .v-chip {
+  border-radius: 10px;
+  font-weight: 700;
+}
+
+.pulse-app .v-expansion-panel {
+  border: 1px solid var(--pulse-border);
+  border-radius: 14px !important;
+  overflow: hidden;
+}
+
+.pulse-app .v-list-item-subtitle,
+.pulse-app .v-list-item-title {
+  white-space: normal;
+}
+
+.pulse-app .v-list-item-subtitle {
+  color: var(--pulse-muted) !important;
+}
+
+.pulse-app .v-list-group__items .v-list-item {
+  padding-inline-start: 24px !important;
+}
+
+@media (max-width: 1200px) {
+  .pulse-drawer {
+    width: 250px !important;
+  }
+
+  .brand-title {
+    font-size: 1.8rem;
+  }
+}
+
+@media (max-width: 960px) {
+  .shell-topbar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .topbar-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
 }

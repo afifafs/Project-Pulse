@@ -76,6 +76,31 @@ const overviewCards = computed(() => [
   { title: 'Instructors', value: instructors.value.length, icon: 'mdi-teach' },
 ])
 
+const navMeta = computed(() => {
+  const map = {
+    overview: { section: 'Home', title: 'Overview' },
+    'admin-rubrics': { section: 'Admin', title: 'Rubrics' },
+    'admin-sections': { section: 'Admin', title: 'Sections' },
+    'admin-teams': { section: 'Admin', title: 'Teams' },
+    'admin-people': { section: 'Admin', title: 'People' },
+    'student-workspace': { section: 'Peer Evaluations', title: 'Student Workspace' },
+    'instructor-reports': { section: 'Weekly Activity Reports', title: 'Reports' },
+  }
+
+  return map[nav.value] ?? { section: 'Project Pulse', title: 'Workspace' }
+})
+
+const currentUserLabel = computed(() => {
+  const firstName = profileForm.value.firstName?.trim()
+  const lastName = profileForm.value.lastName?.trim()
+
+  if (firstName || lastName) {
+    return `${firstName ?? ''} ${lastName ?? ''}`.trim()
+  }
+
+  return 'Project Pulse'
+})
+
 const selectedSection = computed(() => sections.value.find((item) => item.id === selectedSectionId.value) ?? null)
 const workspaceSectionDetail = computed(() => {
   if (sectionDetail.value?.id === workspaceSectionId.value) {
@@ -648,32 +673,52 @@ onMounted(async () => {
 </script>
 
 <template>
-  <v-app>
-    <v-navigation-drawer permanent width="280">
-      <v-list-item title="Project Pulse" subtitle="AI-assisted dashboard" />
-      <v-divider class="mb-2" />
-      <v-list nav density="comfortable">
-        <v-list-item :active="nav === 'overview'" prepend-icon="mdi-view-dashboard" title="Overview" @click="nav = 'overview'" />
-        <v-list-item :active="nav === 'admin-rubrics'" prepend-icon="mdi-format-list-bulleted-square" title="Admin · Rubrics" @click="nav = 'admin-rubrics'" />
-        <v-list-item :active="nav === 'admin-sections'" prepend-icon="mdi-google-classroom" title="Admin · Sections" @click="nav = 'admin-sections'" />
-        <v-list-item :active="nav === 'admin-teams'" prepend-icon="mdi-account-group" title="Admin · Teams" @click="nav = 'admin-teams'" />
-        <v-list-item :active="nav === 'admin-people'" prepend-icon="mdi-account-multiple" title="Admin · People" @click="nav = 'admin-people'" />
-        <v-list-item :active="nav === 'student-workspace'" prepend-icon="mdi-account-school" title="Student Workspace" @click="nav = 'student-workspace'" />
-        <v-list-item :active="nav === 'instructor-reports'" prepend-icon="mdi-chart-box" title="Instructor Reports" @click="nav = 'instructor-reports'" />
+  <v-app class="pulse-app">
+    <v-navigation-drawer permanent width="292" class="pulse-drawer">
+      <div class="drawer-brand">
+        <div class="brand-mark">
+          <v-icon icon="mdi-pulse" />
+        </div>
+        <div>
+          <div class="brand-title">Project Pulse</div>
+          <div class="brand-subtitle">Senior design portal</div>
+        </div>
+      </div>
+
+      <v-list nav density="comfortable" class="drawer-nav">
+        <v-list-item :active="nav === 'overview'" prepend-icon="mdi-home-outline" title="Home" @click="nav = 'overview'" />
+        <v-list-item :active="nav === 'admin-rubrics'" prepend-icon="mdi-clipboard-text-outline" title="Rubrics" @click="nav = 'admin-rubrics'" />
+        <v-list-item :active="nav === 'admin-sections'" prepend-icon="mdi-google-classroom" title="Sections" @click="nav = 'admin-sections'" />
+        <v-list-item :active="nav === 'admin-teams'" prepend-icon="mdi-account-group-outline" title="Teams" @click="nav = 'admin-teams'" />
+        <v-list-item :active="nav === 'admin-people'" prepend-icon="mdi-account-multiple-outline" title="People" @click="nav = 'admin-people'" />
+        <v-list-item :active="nav === 'student-workspace'" prepend-icon="mdi-clipboard-account-outline" title="Student Workspace" @click="nav = 'student-workspace'" />
+        <v-list-item :active="nav === 'instructor-reports'" prepend-icon="mdi-chart-box-outline" title="Reports" @click="nav = 'instructor-reports'" />
       </v-list>
     </v-navigation-drawer>
 
     <v-main>
-      <v-container fluid class="pa-6">
-        <v-row class="mb-3" align="center">
-          <v-col cols="12" md="8">
-            <div class="text-h4 font-weight-bold">Project Pulse</div>
-            <div class="text-medium-emphasis">Senior design administration, student reporting, and instructor analytics.</div>
-          </v-col>
-          <v-col cols="12" md="4" class="d-flex justify-end">
-            <v-btn color="primary" prepend-icon="mdi-refresh" :loading="loading" @click="loadCatalogs">Refresh</v-btn>
-          </v-col>
-        </v-row>
+      <v-container fluid class="pulse-shell pa-6">
+        <div class="shell-topbar">
+          <div class="crumbs-wrap">
+            <v-btn icon="mdi-menu" variant="text" size="small" class="topbar-icon" />
+            <div class="crumbs">
+              <span>{{ navMeta.section }}</span>
+              <v-icon size="14" icon="mdi-chevron-right" />
+              <strong>{{ navMeta.title }}</strong>
+            </div>
+          </div>
+
+          <div class="topbar-actions">
+            <v-btn icon="mdi-refresh" variant="text" class="topbar-icon" :loading="loading" @click="loadCatalogs" />
+            <v-btn icon="mdi-arrow-expand" variant="text" class="topbar-icon" />
+            <div class="user-chip">
+              <v-avatar size="44" color="#d1d5db">
+                <v-icon icon="mdi-account" color="white" />
+              </v-avatar>
+              <span>{{ currentUserLabel }}</span>
+            </div>
+          </div>
+        </div>
 
         <v-alert
           v-if="alert.text"
@@ -689,7 +734,7 @@ onMounted(async () => {
         <template v-if="nav === 'overview'">
           <v-row>
             <v-col v-for="card in overviewCards" :key="card.title" cols="12" md="3">
-              <v-card class="fill-height">
+              <v-card class="fill-height pulse-card">
                 <v-card-text class="d-flex align-center ga-4">
                   <v-icon size="36" color="primary">{{ card.icon }}</v-icon>
                   <div>
@@ -702,7 +747,7 @@ onMounted(async () => {
           </v-row>
           <v-row class="mt-1">
             <v-col cols="12" md="7">
-              <v-card>
+              <v-card class="pulse-card">
                 <v-card-title>Sections</v-card-title>
                 <v-data-table :items="sections" :headers="[
                   { title: 'Name', key: 'name' },
@@ -711,7 +756,7 @@ onMounted(async () => {
               </v-card>
             </v-col>
             <v-col cols="12" md="5">
-              <v-card>
+              <v-card class="pulse-card">
                 <v-card-title>Team Snapshot</v-card-title>
                 <v-list>
                   <v-list-item v-for="team in teams.slice(0, 6)" :key="team.id">
@@ -727,7 +772,7 @@ onMounted(async () => {
         <template v-else-if="nav === 'admin-rubrics'">
           <v-row>
             <v-col cols="12" md="6">
-              <v-card>
+              <v-card class="pulse-card">
                 <v-card-title>Create Rubric</v-card-title>
                 <v-card-text>
                   <v-text-field v-model="rubricForm.name" label="Rubric name" />
@@ -750,7 +795,7 @@ onMounted(async () => {
               </v-card>
             </v-col>
             <v-col cols="12" md="6">
-              <v-card>
+              <v-card class="pulse-card">
                 <v-card-title>Existing Rubrics</v-card-title>
                 <v-data-table
                   :items="rubrics"
@@ -771,7 +816,7 @@ onMounted(async () => {
         <template v-else-if="nav === 'admin-sections'">
           <v-row>
             <v-col cols="12" md="5">
-              <v-card class="mb-4">
+              <v-card class="mb-4 pulse-card">
                 <v-card-title>{{ sectionFormMode === 'edit' ? 'Edit Section' : 'Create Section' }}</v-card-title>
                 <v-card-text>
                   <v-text-field v-model="sectionForm.name" label="Section name" />
@@ -785,7 +830,7 @@ onMounted(async () => {
                   </div>
                 </v-card-text>
               </v-card>
-              <v-card>
+              <v-card class="pulse-card">
                 <v-card-title>Sections</v-card-title>
                 <v-list>
                   <v-list-item
@@ -801,7 +846,7 @@ onMounted(async () => {
               </v-card>
             </v-col>
             <v-col cols="12" md="7">
-              <v-card v-if="sectionDetail">
+              <v-card v-if="sectionDetail" class="pulse-card">
                 <v-card-title class="d-flex justify-space-between">
                   <span>{{ sectionDetail.name }}</span>
                   <v-btn variant="tonal" size="small" prepend-icon="mdi-pencil" @click="beginEditSection">Edit</v-btn>
@@ -833,7 +878,7 @@ onMounted(async () => {
         <template v-else-if="nav === 'admin-teams'">
           <v-row>
             <v-col cols="12" md="5">
-              <v-card class="mb-4">
+              <v-card class="mb-4 pulse-card">
                 <v-card-title>{{ teamFormMode === 'edit' ? 'Edit Team' : 'Create Team' }}</v-card-title>
                 <v-card-text>
                   <v-text-field v-model="teamForm.name" label="Team name" />
@@ -847,7 +892,7 @@ onMounted(async () => {
                 </v-card-text>
               </v-card>
 
-              <v-card>
+              <v-card class="pulse-card">
                 <v-card-title>Teams</v-card-title>
                 <v-list>
                   <v-list-item
@@ -863,7 +908,7 @@ onMounted(async () => {
               </v-card>
             </v-col>
             <v-col cols="12" md="7">
-              <v-card v-if="teamDetail">
+              <v-card v-if="teamDetail" class="pulse-card">
                 <v-card-title class="d-flex justify-space-between">
                   <span>{{ teamDetail.name }}</span>
                   <v-btn variant="tonal" size="small" prepend-icon="mdi-pencil" @click="beginEditTeam">Edit</v-btn>
@@ -890,7 +935,7 @@ onMounted(async () => {
         <template v-else-if="nav === 'admin-people'">
           <v-row>
             <v-col cols="12" md="6">
-              <v-card class="mb-4">
+              <v-card class="mb-4 pulse-card">
                 <v-card-title>Invite Students</v-card-title>
                 <v-card-text>
                   <v-select v-model="inviteStudentsForm.sectionId" :items="sectionItems" label="Section" />
@@ -898,7 +943,7 @@ onMounted(async () => {
                   <v-btn color="primary" @click="inviteStudents">Send Student Invites</v-btn>
                 </v-card-text>
               </v-card>
-              <v-card>
+              <v-card class="pulse-card">
                 <v-card-title>Students</v-card-title>
                 <v-data-table :items="students" :headers="[
                   { title: 'Name', key: 'firstName' },
@@ -913,14 +958,14 @@ onMounted(async () => {
               </v-card>
             </v-col>
             <v-col cols="12" md="6">
-              <v-card class="mb-4">
+              <v-card class="mb-4 pulse-card">
                 <v-card-title>Invite Instructors</v-card-title>
                 <v-card-text>
                   <v-textarea v-model="inviteInstructorsForm.emails" label="Emails (semicolon separated or array text)" rows="3" />
                   <v-btn color="primary" @click="inviteInstructors">Send Instructor Invites</v-btn>
                 </v-card-text>
               </v-card>
-              <v-card>
+              <v-card class="pulse-card">
                 <v-card-title>Instructors</v-card-title>
                 <v-data-table :items="instructors" :headers="[
                   { title: 'Name', key: 'firstName' },
@@ -939,7 +984,7 @@ onMounted(async () => {
         <template v-else-if="nav === 'student-workspace'">
           <v-row>
             <v-col cols="12">
-              <v-card class="mb-4">
+              <v-card class="mb-4 pulse-card">
                 <v-card-text class="d-flex flex-wrap ga-4">
                   <v-select v-model="workspaceSectionId" :items="sectionItems" label="Section" class="selector" />
                   <v-select v-model="workspaceStudentId" :items="studentItems.filter((item) => item.title.includes(selectedWorkspaceSectionName ?? ''))" label="Student" class="selector" />
@@ -954,7 +999,7 @@ onMounted(async () => {
             </v-col>
 
             <v-col cols="12" md="4">
-              <v-card class="mb-4">
+              <v-card class="mb-4 pulse-card">
                 <v-card-title>Profile</v-card-title>
                 <v-card-text>
                   <v-text-field v-model="profileForm.firstName" label="First name" />
@@ -964,7 +1009,7 @@ onMounted(async () => {
                 </v-card-text>
               </v-card>
 
-              <v-card>
+              <v-card class="pulse-card">
                 <v-card-title>Reset Password</v-card-title>
                 <v-card-text>
                   <v-text-field v-model="passwordForm.newPassword" label="New password" type="password" />
@@ -975,7 +1020,7 @@ onMounted(async () => {
             </v-col>
 
             <v-col cols="12" md="8">
-              <v-card class="mb-4">
+              <v-card class="mb-4 pulse-card">
                 <v-card-title class="d-flex justify-space-between">
                   <span>Weekly Activity Report</span>
                   <v-btn variant="tonal" prepend-icon="mdi-plus" @click="addActivityRow">Add Row</v-btn>
@@ -996,7 +1041,7 @@ onMounted(async () => {
                 </v-card-text>
               </v-card>
 
-              <v-card class="mb-4">
+              <v-card class="mb-4 pulse-card">
                 <v-card-title>My Evaluation History</v-card-title>
                 <v-data-table :items="evaluationHistory" :headers="[
                   { title: 'Week Start', key: 'weekStart' },
@@ -1005,7 +1050,7 @@ onMounted(async () => {
                 ]" />
               </v-card>
 
-              <v-card>
+              <v-card class="pulse-card">
                 <v-card-title>Submit Peer Evaluations</v-card-title>
                 <v-card-text>
                   <v-expansion-panels>
@@ -1041,7 +1086,7 @@ onMounted(async () => {
         <template v-else-if="nav === 'instructor-reports'">
           <v-row>
             <v-col cols="12">
-              <v-card class="mb-4">
+              <v-card class="mb-4 pulse-card">
                 <v-card-text class="d-flex flex-wrap ga-4">
                   <v-select v-model="reportSectionId" :items="sectionItems" label="Section" class="selector" />
                   <v-select
@@ -1067,7 +1112,7 @@ onMounted(async () => {
             </v-col>
 
             <v-col cols="12" md="6">
-              <v-card class="mb-4">
+              <v-card class="mb-4 pulse-card">
                 <v-card-title>Section Evaluation Report</v-card-title>
                 <v-data-table
                   :items="sectionEvaluationReport?.rows ?? []"
@@ -1079,7 +1124,7 @@ onMounted(async () => {
                 />
               </v-card>
 
-              <v-card>
+              <v-card class="pulse-card">
                 <v-card-title>Team WAR Report</v-card-title>
                 <v-list v-if="teamActivityReport?.groups?.length">
                   <v-list-group v-for="group in teamActivityReport.groups" :key="group.studentId" :value="group.studentId">
@@ -1099,7 +1144,7 @@ onMounted(async () => {
             </v-col>
 
             <v-col cols="12" md="6">
-              <v-card>
+              <v-card class="pulse-card">
                 <v-card-title>Student Evaluation Report</v-card-title>
                 <v-list v-if="studentEvaluationReport?.rows?.length">
                   <v-list-item
