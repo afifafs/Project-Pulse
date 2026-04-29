@@ -3,6 +3,7 @@ package team.projectpulse.ram.service;
 import java.util.List;
 import java.util.Set;
 import java.util.LinkedHashSet;
+import java.util.HashSet;
 import java.time.LocalDate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -50,9 +51,9 @@ public class SectionService {
 
         Section section = new Section();
         applySectionUpdates(section, request);
-        sectionRepository.save(section);
-        regenerateWeeks(section, Set.of());
-        return getSectionDetails(section.getId());
+        Section savedSection = sectionRepository.saveAndFlush(section);
+        regenerateWeeks(savedSection, Set.of());
+        return getSectionDetails(savedSection.getId());
     }
 
     @Transactional(readOnly = true)
@@ -66,7 +67,7 @@ public class SectionService {
 
     @Transactional(readOnly = true)
     public SectionDetailResponse getSectionDetails(Long id) {
-        Section section = sectionRepository.findByIdWithDetails(id)
+        Section section = sectionRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Section not found with id: " + id));
 
         return mapToSectionDetailResponse(section);
@@ -77,21 +78,28 @@ public class SectionService {
     }
 
     @Transactional
+    public void synchronizeWeeksForAllSections() {
+        for (Section section : sectionRepository.findAllByOrderByNameDesc()) {
+            synchronizeWeeksForSection(section);
+        }
+    }
+
+    @Transactional
     public SectionDetailResponse updateSection(Long id, SectionRequest request) {
         Section section = sectionRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Section not found with id: " + id));
         validateSectionRequest(request, id);
 
         applySectionUpdates(section, request);
-        sectionRepository.save(section);
-        if (section.getWeeks().isEmpty()) {
-            regenerateWeeks(section, Set.of());
+        Section savedSection = sectionRepository.saveAndFlush(section);
+        if (savedSection.getWeeks().isEmpty()) {
+            regenerateWeeks(savedSection, Set.of());
         } else {
-            Set<LocalDate> inactiveWeeks = section.getWeeks().stream()
+            Set<LocalDate> inactiveWeeks = savedSection.getWeeks().stream()
                     .filter(week -> !week.isActive())
                     .map(SectionWeek::getWeekStart)
                     .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new));
-            regenerateWeeks(section, inactiveWeeks);
+            regenerateWeeks(savedSection, inactiveWeeks);
         }
         return getSectionDetails(id);
     }
@@ -105,7 +113,7 @@ public class SectionService {
 
     @Transactional
     public SectionDetailResponse updateActiveWeeks(Long id, ActiveWeeksRequest request) {
-        Section section = sectionRepository.findByIdWithDetails(id)
+        Section section = sectionRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Section not found with id: " + id));
 
         Set<LocalDate> inactiveWeeks = request == null || request.getInactiveWeeks() == null
@@ -242,10 +250,72 @@ public class SectionService {
         }
     }
 
-    private void regenerateWeeks(Section section, Set<LocalDate> inactiveWeeks) {
-        sectionWeekRepository.deleteAllBySectionId(section.getId());
+    private void synchronizeWeeksForSection(Section section) {
+        if (section.getId() == null || section.getStartDate() == null || section.getEndDate() == null) {
+            return;
+        }
 
-        List<SectionWeek> generated = new java.util.ArrayList<>();
+        List<SectionWeek> existingWeeks = sectionWeekRepository.findAllBySectionIdOrderByWeekStartAsc(section.getId());
+        Set<LocalDate> inactiveWeeks = existingWeeks.stream()
+                .filter(week -> !week.isActive())
+                .map(SectionWeek::getWeekStart)
+                .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new));
+
+        if (needsWeekRegeneration(section, existingWeeks)) {
+            regenerateWeeks(section, inactiveWeeks);
+        } else {
+            section.getWeeks().clear();
+            section.getWeeks().addAll(existingWeeks);
+        }
+    }
+
+    private boolean needsWeekRegeneration(Section section, List<SectionWeek> existingWeeks) {
+        if (existingWeeks.isEmpty()) {
+            return true;
+        }
+
+        Set<LocalDate> expectedStarts = new HashSet<>();
+        LocalDate cursor = section.getStartDate();
+        while (!cursor.isAfter(section.getEndDate())) {
+            expectedStarts.add(cursor);
+            cursor = cursor.plusWeeks(1);
+        }
+
+        if (existingWeeks.size() != expectedStarts.size()) {
+            return true;
+        }
+
+        int expectedWeekNumber = 1;
+        for (SectionWeek week : existingWeeks) {
+            if (!expectedStarts.contains(week.getWeekStart())) {
+                return true;
+            }
+
+            if (week.getWeekNumber() != expectedWeekNumber) {
+                return true;
+            }
+
+            LocalDate expectedEnd = week.getWeekStart().plusDays(6);
+            if (expectedEnd.isAfter(section.getEndDate())) {
+                expectedEnd = section.getEndDate();
+            }
+
+            if (!expectedEnd.equals(week.getWeekEnd())) {
+                return true;
+            }
+
+            expectedWeekNumber += 1;
+        }
+
+        return false;
+    }
+
+    private void regenerateWeeks(Section section, Set<LocalDate> inactiveWeeks) {
+        if (section.getId() == null) {
+            throw new IllegalStateException("Section must be persisted before generating weeks.");
+        }
+        section.getWeeks().clear();
+
         LocalDate cursor = section.getStartDate();
         int weekNumber = 1;
         while (!cursor.isAfter(section.getEndDate())) {
@@ -259,12 +329,10 @@ public class SectionService {
             }
             week.setWeekEnd(weekEnd);
             week.setActive(!inactiveWeeks.contains(cursor));
-            generated.add(week);
+            section.addWeek(week);
             cursor = cursor.plusWeeks(1);
             weekNumber += 1;
         }
-
-        section.setWeeks(sectionWeekRepository.saveAll(generated));
     }
 
     private String fullName(Instructor instructor) {

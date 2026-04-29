@@ -14,7 +14,9 @@ import team.projectpulse.ram.dto.InviteInstructorsRequest;
 import team.projectpulse.ram.exception.InvalidStudentRequestException;
 import team.projectpulse.ram.exception.ResourceNotFoundException;
 import team.projectpulse.ram.model.Instructor;
+import team.projectpulse.ram.model.Team;
 import team.projectpulse.ram.repository.InstructorRepository;
+import team.projectpulse.ram.repository.TeamRepository;
 
 @Service
 public class InstructorService {
@@ -23,9 +25,11 @@ public class InstructorService {
     private static final Pattern EMAIL_PATTERN = Pattern.compile("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
 
     private final InstructorRepository instructorRepository;
+    private final TeamRepository teamRepository;
 
-    public InstructorService(InstructorRepository instructorRepository) {
+    public InstructorService(InstructorRepository instructorRepository, TeamRepository teamRepository) {
         this.instructorRepository = instructorRepository;
+        this.teamRepository = teamRepository;
     }
 
     @Transactional
@@ -55,7 +59,19 @@ public class InstructorService {
 
     @Transactional(readOnly = true)
     public List<InstructorResponse> findInstructors(String name, String email, String sectionName) {
-        return instructorRepository.search(normalizeFilter(name), normalizeFilter(email), normalizeFilter(sectionName)).stream()
+        String nameFilter = normalizeFilter(name);
+        String emailFilter = normalizeFilter(email);
+        String sectionFilter = normalizeFilter(sectionName);
+
+        List<Team> teams = teamRepository.findAll();
+
+        return instructorRepository.findAll().stream()
+                .filter(instructor -> matches(fullName(instructor), nameFilter))
+                .filter(instructor -> matches(instructor.getEmail(), emailFilter))
+                .filter(instructor -> matchesSection(instructor, teams, sectionFilter))
+                .sorted(java.util.Comparator
+                        .comparing(Instructor::getLastName, java.util.Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER))
+                        .thenComparing(Instructor::getFirstName, java.util.Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER)))
                 .map(InstructorResponse::fromEntity)
                 .toList();
     }
@@ -126,5 +142,27 @@ public class InstructorService {
 
     private String normalizeFilter(String value) {
         return value == null || value.trim().isEmpty() ? null : value.trim();
+    }
+
+    private boolean matches(String value, String filter) {
+        if (filter == null) {
+            return true;
+        }
+        return value != null && value.toLowerCase().contains(filter.toLowerCase());
+    }
+
+    private String fullName(Instructor instructor) {
+        return ((instructor.getFirstName() == null ? "" : instructor.getFirstName()) + " "
+                + (instructor.getLastName() == null ? "" : instructor.getLastName())).trim();
+    }
+
+    private boolean matchesSection(Instructor instructor, List<Team> teams, String sectionFilter) {
+        if (sectionFilter == null) {
+            return true;
+        }
+        return teams.stream()
+                .filter(team -> team.getInstructors().contains(instructor))
+                .map(team -> team.getSection() == null ? null : team.getSection().getName())
+                .anyMatch(sectionName -> matches(sectionName, sectionFilter));
     }
 }

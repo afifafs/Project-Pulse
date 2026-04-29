@@ -9,8 +9,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+import team.projectpulse.ram.dto.RubricDetailResponse;
 import team.projectpulse.ram.dto.RubricRequest;
-import team.projectpulse.ram.model.Rubric;
 import team.projectpulse.ram.service.RubricService;
 
 @RestController
@@ -24,13 +24,13 @@ public class RubricController {
     }
 
     @GetMapping
-    public ResponseEntity<List<Rubric>> getRubrics() {
+    public ResponseEntity<List<RubricDetailResponse>> getRubrics() {
         return ResponseEntity.ok(rubricService.getAllRubrics());
     }
 
     @PostMapping
-    public ResponseEntity<Rubric> createRubric(@RequestBody RubricRequest request) {
-        Rubric createdRubric = rubricService.createRubric(request);
+    public ResponseEntity<RubricDetailResponse> createRubric(@RequestBody RubricRequest request) {
+        RubricDetailResponse createdRubric = rubricService.createRubric(request);
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
                 .path("/{id}")
                 .buildAndExpand(createdRubric.getId())

@@ -68,7 +68,16 @@ public class TeamService {
 
     @Transactional(readOnly = true)
     public List<TeamDetailResponse> getAllTeams(String sectionName, String teamName) {
-        return teamRepository.search(normalizeFilter(sectionName), normalizeFilter(teamName)).stream()
+        String sectionFilter = normalizeFilter(sectionName);
+        String teamFilter = normalizeFilter(teamName);
+
+        return teamRepository.findAll().stream()
+                .filter(team -> matches(team.getSection() == null ? null : team.getSection().getName(), sectionFilter))
+                .filter(team -> matches(team.getName(), teamFilter))
+                .sorted(java.util.Comparator
+                        .comparing((Team team) -> team.getSection() == null ? "" : team.getSection().getName(),
+                                String.CASE_INSENSITIVE_ORDER.reversed())
+                        .thenComparing(Team::getName, String.CASE_INSENSITIVE_ORDER))
                 .map(this::map)
                 .toList();
     }
@@ -217,5 +226,12 @@ public class TeamService {
 
     private String normalizeFilter(String value) {
         return value == null || value.trim().isEmpty() ? null : value.trim();
+    }
+
+    private boolean matches(String value, String filter) {
+        if (filter == null) {
+            return true;
+        }
+        return value != null && value.toLowerCase().contains(filter.toLowerCase());
     }
 }

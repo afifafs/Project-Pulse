@@ -120,8 +120,23 @@ public class StudentService {
 
     @Transactional(readOnly = true)
     public List<StudentDetailResponse> findStudents(String name, String email, String sectionName, String teamName) {
-        return studentRepository.search(normalizeFilter(name), normalizeFilter(email), normalizeFilter(sectionName), normalizeFilter(teamName))
-                .stream()
+        String nameFilter = normalizeFilter(name);
+        String emailFilter = normalizeFilter(email);
+        String sectionFilter = normalizeFilter(sectionName);
+        String teamFilter = normalizeFilter(teamName);
+
+        return studentRepository.findAll().stream()
+                .filter(student -> matches(fullName(student), nameFilter))
+                .filter(student -> matches(student.getEmail(), emailFilter))
+                .filter(student -> matches(student.getSection() == null ? null : student.getSection().getName(), sectionFilter))
+                .filter(student -> matches(student.getTeam() == null ? null : student.getTeam().getName(), teamFilter))
+                .sorted(java.util.Comparator
+                        .comparing((Student student) -> student.getSection() == null ? "" : student.getSection().getName(),
+                                String.CASE_INSENSITIVE_ORDER.reversed())
+                        .thenComparing(student -> student.getTeam() == null ? "" : student.getTeam().getName(),
+                                String.CASE_INSENSITIVE_ORDER)
+                        .thenComparing(Student::getLastName, java.util.Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER))
+                        .thenComparing(Student::getFirstName, java.util.Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER)))
                 .map(StudentDetailResponse::fromEntity)
                 .toList();
     }
@@ -227,5 +242,17 @@ public class StudentService {
 
     private String normalizeFilter(String value) {
         return value == null || value.trim().isEmpty() ? null : value.trim();
+    }
+
+    private boolean matches(String value, String filter) {
+        if (filter == null) {
+            return true;
+        }
+        return value != null && value.toLowerCase().contains(filter.toLowerCase());
+    }
+
+    private String fullName(Student student) {
+        return ((student.getFirstName() == null ? "" : student.getFirstName()) + " "
+                + (student.getLastName() == null ? "" : student.getLastName())).trim();
     }
 }

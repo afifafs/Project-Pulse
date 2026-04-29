@@ -5,6 +5,8 @@ import java.util.Optional;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import team.projectpulse.ram.dto.CriterionRequest;
+import team.projectpulse.ram.dto.CriterionResponse;
+import team.projectpulse.ram.dto.RubricDetailResponse;
 import team.projectpulse.ram.dto.RubricRequest;
 import team.projectpulse.ram.exception.DuplicateResourceException;
 import team.projectpulse.ram.exception.InvalidRubricRequestException;
@@ -22,7 +24,7 @@ public class RubricService {
     }
 
     @Transactional
-    public Rubric createRubric(RubricRequest dto) {
+    public RubricDetailResponse createRubric(RubricRequest dto) {
         validateRubricRequest(dto);
 
         Rubric rubric = new Rubric();
@@ -36,16 +38,17 @@ public class RubricService {
             rubric.addCriterion(criterion);
         }
 
-        return rubricRepository.save(rubric);
+        return map(rubricRepository.save(rubric));
     }
 
     public Optional<Rubric> getRubricById(Long id) {
         return Optional.empty();
     }
 
-    public List<Rubric> getAllRubrics() {
-        return rubricRepository.findAll().stream()
-                .sorted(java.util.Comparator.comparing(Rubric::getName, String.CASE_INSENSITIVE_ORDER))
+    @Transactional(readOnly = true)
+    public List<RubricDetailResponse> getAllRubrics() {
+        return rubricRepository.findAllWithCriteria().stream()
+                .map(this::map)
                 .toList();
     }
 
@@ -90,5 +93,18 @@ public class RubricService {
         if (criterion.getMaxScore() == null || criterion.getMaxScore() <= 0) {
             throw new InvalidRubricRequestException("Criterion maxScore must be greater than 0.");
         }
+    }
+
+    private RubricDetailResponse map(Rubric rubric) {
+        List<CriterionResponse> criteria = rubric.getCriteria().stream()
+                .map(CriterionResponse::fromEntity)
+                .toList();
+
+        return new RubricDetailResponse(
+                rubric.getId(),
+                rubric.getName(),
+                rubric.getDescription(),
+                criteria
+        );
     }
 }
