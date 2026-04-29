@@ -31,8 +31,8 @@ jobs:
       - name: Install dependencies and build Vue.js
         working-directory: ./frontend
         run: |
-          npm install
-          npm run build-only
+          npm ci
+          npm run build
 
       # Step 4: Copy the Vue build files to the Spring Boot static directory
       # Even though static does exist in the Spring Boot project, it is not tracked by Git, so we need to create it.
@@ -81,7 +81,6 @@ jobs:
 
   deploy:
     runs-on: ubuntu-latest
-
     needs: build
 
     steps:
@@ -96,5 +95,4 @@ jobs:
         with:
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-          images: "ghcr.io/${{ env.REPO }}:${{ github.sha }}"
-          slot-name: staging
+          images: ghcr.io/${{ env.REPO }}:${{ github.sha }}

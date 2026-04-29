@@ -1,0 +1,15 @@
+.git
+.github
+.idea
+frontend/node_modules
+frontend/.vscode
+frontend/dist
+target
+src
+backend/.idea
+backend/backend.iml
+backend/target/classes
+backend/target/generated-sources
+backend/target/maven-archiver
+backend/target/maven-status
+backend/target/test-classes
